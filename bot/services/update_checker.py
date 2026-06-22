@@ -159,7 +159,10 @@ class UpdateChecker:
         """Broadcast countdown warnings to every server and Discord."""
         remaining = total_seconds
         for warn_at in sorted(_WARN_SCHEDULE, reverse=True):
-            if remaining <= warn_at:
+            # `<` (not `<=`) so a countdown set exactly to a milestone (e.g. a
+            # 15-minute countdown -> 900s) still fires that opening warning
+            # instead of silently skipping to the next one.
+            if remaining < warn_at:
                 continue
             wait = remaining - warn_at
             await asyncio.sleep(wait)

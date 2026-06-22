@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 #
 # 04-apply-rates.sh - Apply server rates + QoL + mod configs to every map.
@@ -263,4 +262,3 @@ A wild-dino wipe is not required when only changing rates or stack sizes.
 To change the rates later, edit the values in this script and run it again.
 
 NOTE
-```
