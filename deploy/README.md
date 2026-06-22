@@ -136,6 +136,30 @@ match. If RCON auth fails in the bot/watchdog, the passwords are out of sync.
   non-root user, add that user to the `docker` group and set `User=` in the
   systemd units.
 
+## Server rates & mod configuration
+`deploy/04-apply-rates.sh` applies the gameplay configuration to every map and
+restarts the cluster. The shipped profile is **PvE, ~3-5x rates, moderate
+breeding, official wild level 150**, plus QoL and the mod settings:
+- Rates: XP 3x, Harvest 3x, Taming 5x, faster resource respawn, 5x item stacks.
+- Breeding: ~15x maturation, 10x hatch, lower cuddle interval, slower baby food drain.
+- PvE: structure/dino decay off, flyer carry, cave building, cluster transfers enabled.
+- Mods: Configurable Cryopods tuned (no cryo sickness, cryo rifle, etc.) and
+  Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
+  replaced by the CS versions so you don't get duplicates).
+- Server-list names: each map advertises as `Battling Poverty [Island]`,
+  `Battling Poverty [Scorched]` and `Battling Poverty [Extinction]` (the prefix
+  is `CLUSTER_NAME` in the script).
+Run it (idempotent - edit the values in the script and re-run anytime):
+```bash
+sudo bash /opt/asa-cluster/deploy/04-apply-rates.sh
+```
+It backs up each map's `Game.ini`/`GameUserSettings.ini` first, then merges in
+place (it sets each map's `SessionName` from `CLUSTER_NAME`; your
+`ServerAdminPassword` and other keys are preserved). After it restarts
+the cluster, wipe wild dinos once (`/server destroy-wild-dinos` per map, or RCON
+`DestroyWildDinos`) so the difficulty and Shad's Critter Reworks variants spawn.
+For a join password, set `ServerPassword` in each map's `GameUserSettings.ini`
+(never on the command line - a space there corrupts the admin password).
 ## Troubleshooting
 - **Server won't appear / start**: `docker logs asa-island`; confirm
   `vm.max_map_count` (`sysctl vm.max_map_count`) and that game UDP ports are

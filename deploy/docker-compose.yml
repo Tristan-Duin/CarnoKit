@@ -9,6 +9,11 @@
 # Ports: game ports are published on all interfaces (players connect to
 # UDP 7777-7779). RCON is published ONLY on 127.0.0.1 so the bot/watchdog
 # can reach it locally - it is never exposed to the internet.
+#
+# NOTE: ServerAdminPassword is intentionally the LAST ?option. ARK reads a
+# password value up to the next space, so any ?option placed after it gets
+# folded into the password (an empty ?ServerPassword= will corrupt it). For a
+# join password, set ServerPassword in each map's GameUserSettings.ini instead.
 
 services:
   # One-shot init: fix ownership of the bind-mounted data dirs to the
@@ -31,7 +36,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?ServerAdminPassword=${ADMIN_PASSWORD}?ServerPassword=${JOIN_PASSWORD}?MaxPlayers=${MAX_PLAYERS} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${ISLAND_GAME_PORT}:${ISLAND_GAME_PORT}/udp"
@@ -58,7 +63,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?ServerAdminPassword=${ADMIN_PASSWORD}?ServerPassword=${JOIN_PASSWORD}?MaxPlayers=${MAX_PLAYERS} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${SCORCHED_GAME_PORT}:${SCORCHED_GAME_PORT}/udp"
@@ -85,7 +90,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=Extinction_WP?listen?Port=${EXTINCTION_GAME_PORT}?RCONPort=${EXTINCTION_RCON_PORT}?RCONEnabled=True?ServerAdminPassword=${ADMIN_PASSWORD}?ServerPassword=${JOIN_PASSWORD}?MaxPlayers=${MAX_PLAYERS} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=Extinction_WP?listen?Port=${EXTINCTION_GAME_PORT}?RCONPort=${EXTINCTION_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${EXTINCTION_GAME_PORT}:${EXTINCTION_GAME_PORT}/udp"
