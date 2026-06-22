@@ -1,0 +1,17 @@
+[Unit]
+Description=ASA Cluster Discord Bot
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+# Runs as root so it can call `docker` (restarts/updates). To use a
+# non-root user instead, add that user to the `docker` group and set User=.
+WorkingDirectory=/opt/asa-cluster/bot
+ExecStart=/opt/asa-cluster/venv/bin/python /opt/asa-cluster/bot/main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,108 @@
+# ARK: Survival Ascended - 3-map cluster
+#
+# Runs The Island, Scorched Earth and Extinction as clustered containers
+# using the maintained mschnitzer/asa-linux-server image (Windows server
+# binary via Proton). All tunables come from the sibling .env file.
+#
+# Start with:   docker compose -p asa-cluster up -d   (see 02-deploy-cluster.sh)
+#
+# Ports: game ports are published on all interfaces (players connect to
+# UDP 7777-7779). RCON is published ONLY on 127.0.0.1 so the bot/watchdog
+# can reach it locally - it is never exposed to the internet.
+
+services:
+  # One-shot init: fix ownership of the bind-mounted data dirs to the
+  # in-container server user (uid/gid 25000). Runs before the servers.
+  asa-permissions:
+    image: alpine:3
+    command: ["sh", "-c", "chown -R 25000:25000 /data"]
+    user: root
+    volumes:
+      - ${BASE_DIR}:/data
+    restart: "no"
+
+  asa-island:
+    image: mschnitzer/asa-linux-server:latest
+    container_name: asa-island
+    hostname: asa-island
+    entrypoint: "/usr/bin/start_server"
+    user: gameserver
+    tty: true
+    restart: unless-stopped
+    stop_grace_period: 90s
+    environment:
+      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?ServerAdminPassword=${ADMIN_PASSWORD}?ServerPassword=${JOIN_PASSWORD}?MaxPlayers=${MAX_PLAYERS} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ENABLE_DEBUG=0
+    ports:
+      - "0.0.0.0:${ISLAND_GAME_PORT}:${ISLAND_GAME_PORT}/udp"
+      - "127.0.0.1:${ISLAND_RCON_PORT}:${ISLAND_RCON_PORT}/tcp"
+    volumes:
+      - ${BASE_DIR}/island/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/island/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/island/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      asa-permissions:
+        condition: service_completed_successfully
+    networks:
+      - asa-network
+
+  asa-scorched:
+    image: mschnitzer/asa-linux-server:latest
+    container_name: asa-scorched
+    hostname: asa-scorched
+    entrypoint: "/usr/bin/start_server"
+    user: gameserver
+    tty: true
+    restart: unless-stopped
+    stop_grace_period: 90s
+    environment:
+      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?ServerAdminPassword=${ADMIN_PASSWORD}?ServerPassword=${JOIN_PASSWORD}?MaxPlayers=${MAX_PLAYERS} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ENABLE_DEBUG=0
+    ports:
+      - "0.0.0.0:${SCORCHED_GAME_PORT}:${SCORCHED_GAME_PORT}/udp"
+      - "127.0.0.1:${SCORCHED_RCON_PORT}:${SCORCHED_RCON_PORT}/tcp"
+    volumes:
+      - ${BASE_DIR}/scorched/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/scorched/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/scorched/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      asa-permissions:
+        condition: service_completed_successfully
+    networks:
+      - asa-network
+
+  asa-extinction:
+    image: mschnitzer/asa-linux-server:latest
+    container_name: asa-extinction
+    hostname: asa-extinction
+    entrypoint: "/usr/bin/start_server"
+    user: gameserver
+    tty: true
+    restart: unless-stopped
+    stop_grace_period: 90s
+    environment:
+      - ASA_START_PARAMS=Extinction_WP?listen?Port=${EXTINCTION_GAME_PORT}?RCONPort=${EXTINCTION_RCON_PORT}?RCONEnabled=True?ServerAdminPassword=${ADMIN_PASSWORD}?ServerPassword=${JOIN_PASSWORD}?MaxPlayers=${MAX_PLAYERS} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ENABLE_DEBUG=0
+    ports:
+      - "0.0.0.0:${EXTINCTION_GAME_PORT}:${EXTINCTION_GAME_PORT}/udp"
+      - "127.0.0.1:${EXTINCTION_RCON_PORT}:${EXTINCTION_RCON_PORT}/tcp"
+    volumes:
+      - ${BASE_DIR}/extinction/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/extinction/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/extinction/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      asa-permissions:
+        condition: service_completed_successfully
+    networks:
+      - asa-network
+
+networks:
+  asa-network:
+    name: asa-network
+    driver: bridge

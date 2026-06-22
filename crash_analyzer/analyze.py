@@ -1,3 +1,18 @@
+"""
+ARK Survival Ascended - Crash Analyzer (cluster-aware)
+
+Scans crash dumps, crashstack files, and server logs for one or every
+server in the cluster and produces a human-readable report explaining what
+crashed, why, and what to do about it.
+
+Usage:
+    py analyze.py                         # Analyze every server in config.ini
+    py analyze.py --server island         # Analyze just one map
+    py analyze.py --last                   # Only the most recent crash (per server)
+    py analyze.py --json                   # Output as JSON
+    py analyze.py --server-dir /path/sf    # Analyze one explicit server-files dir
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -6,7 +21,7 @@ import json
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Tuple
 
 from parser import (
     CrashReport,
@@ -22,15 +37,30 @@ CRASHES_REL = Path("ShooterGame/Saved/Crashes")
 LOGS_REL = Path("ShooterGame/Saved/Logs")
 
 
-def _read_server_dir(config_path: Path) -> Path:
-    """Read server dir from the shared config.ini, with fallback."""
+def _read_servers(config_path: Path) -> Dict[str, Tuple[str, Path]]:
+    """Return {key: (display_name, server_files_dir)} from the cluster config."""
     cp = configparser.ConfigParser()
     cp.read(config_path, encoding="utf-8")
-    return Path(cp.get("server", "dir", fallback="C:/ASA/server"))
+    base = cp.get("cluster", "base_dir", fallback="/opt/asa-cluster")
+    servers: Dict[str, Tuple[str, Path]] = {}
+    raw = cp.get("servers", "list", fallback="")
+    for key in [k.strip() for k in raw.split(",") if k.strip()]:
+        section = f"server.{key}"
+        if not cp.has_section(section):
+            continue
+        name = cp.get(section, "name", fallback=key)
+        log_file = cp.get(section, "log_file", fallback="")
+        if log_file:
+            # <server-files>/ShooterGame/Saved/Logs/ShooterGame.log -> <server-files>
+            server_dir = Path(log_file).parents[3]
+        else:
+            server_dir = Path(base) / key / "server-files"
+        servers[key] = (name, server_dir)
+    return servers
 
 
 def collect_crashes(server_dir: Path) -> List[CrashReport]:
-    """Find and parse all crash data from the server directory."""
+    """Find and parse all crash data from a server-files directory."""
     reports: List[CrashReport] = []
     seen_ids: set[str] = set()
 
@@ -43,7 +73,6 @@ def collect_crashes(server_dir: Path) -> List[CrashReport]:
             report = parse_crash_context(xml_file)
             if report.crash_id:
                 seen_ids.add(report.crash_id)
-            # Attach pre-crash log context
             log_file = find_log_for_crash(logs_dir, report.timestamp)
             if log_file:
                 report.log_context = parse_server_log_tail(
@@ -55,15 +84,12 @@ def collect_crashes(server_dir: Path) -> List[CrashReport]:
     if logs_dir.exists():
         for cs_file in logs_dir.glob("*.crashstack"):
             report = parse_crashstack(cs_file)
-            # Avoid duplicates if we already parsed the XML version
             if report.crash_id and report.crash_id in seen_ids:
                 continue
-            # Try to match by timestamp
             if report.timestamp and any(
                 r.timestamp and abs((r.timestamp - report.timestamp).total_seconds()) < 60
                 for r in reports
             ):
-                # Merge: enrich existing report with crashstack data
                 for r in reports:
                     if r.timestamp and abs((r.timestamp - report.timestamp).total_seconds()) < 60:
                         if not r.call_stack and report.call_stack:
@@ -74,7 +100,6 @@ def collect_crashes(server_dir: Path) -> List[CrashReport]:
                 continue
             reports.append(report)
 
-    # Sort by timestamp (newest first)
     reports.sort(key=lambda r: r.timestamp or datetime.min, reverse=True)
     return reports
 
@@ -100,7 +125,7 @@ def format_report(reports: List[CrashReport], *, verbose: bool = True) -> str:
 
     lines: list[str] = []
     lines.append("=" * 72)
-    lines.append("  CRASH ANALYSIS REPORT")
+    lines.append("  ARK SURVIVAL ASCENDED - CRASH ANALYSIS REPORT")
     lines.append(f"  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append(f"  Total crashes found: {len(reports)}")
     lines.append("=" * 72)
@@ -150,7 +175,7 @@ def format_report(reports: List[CrashReport], *, verbose: bool = True) -> str:
 
     for i, report in enumerate(reports, 1):
         lines.append("")
-        lines.append(f"━━━ Crash #{i} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        lines.append(f"--- Crash #{i} ---------------------------------------------")
         ts = report.timestamp.strftime("%Y-%m-%d %H:%M:%S") if report.timestamp else "unknown"
         lines.append(f"  Time:     {ts}")
         lines.append(f"  Uptime:   {format_uptime(report.uptime_seconds)}")
@@ -169,12 +194,10 @@ def format_report(reports: List[CrashReport], *, verbose: bool = True) -> str:
             lines.append("")
             lines.append("  CALL STACK (top 8 frames):")
             for frame in report.call_stack[:8]:
-                # Clean up the frame for readability
                 frame = frame.replace("ArkAscendedServer!", "")
                 frame = frame.replace("ArkAscendedServer.exe!", "")
-                # Shorten file paths
                 frame = frame.replace("C:\\j\\workspace\\RelB\\", "")
-                lines.append(f"    → {frame}")
+                lines.append(f"    -> {frame}")
 
         if verbose and report.log_context:
             lines.append("")
@@ -197,7 +220,7 @@ def format_report(reports: List[CrashReport], *, verbose: bool = True) -> str:
     if rcon_crashes > 0:
         recs.append(
             f"  1. {rcon_crashes} crash(es) were caused by RCON bot commands. "
-            f"Review which cheat commands your bot sends — commands like Fly, God, "
+            f"Review which cheat commands your bot sends - commands like Fly, God, "
             f"and Slomo crash the dedicated server because they need a player context "
             f"that doesn't exist in RCON."
         )
@@ -212,19 +235,18 @@ def format_report(reports: List[CrashReport], *, verbose: bool = True) -> str:
         recs.append(
             f"  {len(recs)+1}. {oom_crashes} crash(es) from out-of-memory. "
             f"Set up scheduled restarts every 4-6 hours to clear memory leaks, "
-            f"or monitor memory usage and restart when it exceeds a threshold."
+            f"or enable the watchdog memory limit to restart before a hard crash."
         )
     if engine_crashes > 0:
         recs.append(
             f"  {len(recs)+1}. {engine_crashes} crash(es) in the game engine itself. "
-            f"Run 'steamcmd +app_update 2430930 validate' to verify server files, "
+            f"Restart the container to re-validate files via SteamCMD, "
             f"and check if a game update is available."
         )
     if uptimes and sum(uptimes) / len(uptimes) < 14400:
         recs.append(
-            f"  {len(recs)+1}. Average uptime is short — consider setting up a process "
-            f"watchdog to auto-restart the server after crashes and preemptively "
-            f"restart before memory issues cause hard crashes."
+            f"  {len(recs)+1}. Average uptime is short - the watchdog will auto-restart "
+            f"crashed containers; consider scheduled restarts to pre-empt memory issues."
         )
 
     if recs:
@@ -234,7 +256,7 @@ def format_report(reports: List[CrashReport], *, verbose: bool = True) -> str:
             lines.append("")
     else:
         lines.append("")
-        lines.append("  No specific recommendations — server appears stable.")
+        lines.append("  No specific recommendations - server appears stable.")
 
     lines.append("=" * 72)
     return "\n".join(lines)
@@ -265,34 +287,69 @@ def reports_to_json(reports: List[CrashReport]) -> str:
     return json.dumps(data, indent=2)
 
 
+def _resolve_targets(args) -> List[Tuple[str, Path]]:
+    """Build the list of (label, server_dir) to analyze."""
+    if args.server_dir:
+        return [("custom", args.server_dir)]
+
+    servers = _read_servers(args.config)
+    if not servers:
+        print("No servers configured in config.ini ([servers] list).", file=sys.stderr)
+        sys.exit(1)
+
+    if args.server:
+        if args.server not in servers:
+            print(
+                f"Unknown server '{args.server}'. Known: {', '.join(servers)}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        name, d = servers[args.server]
+        return [(name, d)]
+
+    return [(name, d) for (name, d) in servers.values()]
+
+
 def main():
-    ap = argparse.ArgumentParser(description="CarnoKit Crash Analyzer")
+    ap = argparse.ArgumentParser(description="ARK Survival Ascended Crash Analyzer")
     ap.add_argument("--config", type=Path, default=_DEFAULT_CONFIG,
-                     help="Path to shared config.ini (default: C:\\ASA\\config.ini)")
+                     help="Path to shared config.ini (default: ../config.ini)")
+    ap.add_argument("--server", default=None,
+                     help="Server key to analyze (e.g. island). Default: all servers")
     ap.add_argument("--server-dir", type=Path, default=None,
-                     help="Override server directory (otherwise read from config.ini)")
+                     help="Analyze one explicit server-files directory (overrides --server)")
     ap.add_argument("--last", action="store_true",
-                     help="Only analyze the most recent crash")
+                     help="Only analyze the most recent crash (per server)")
     ap.add_argument("--json", action="store_true",
                      help="Output as JSON instead of text report")
     ap.add_argument("--brief", action="store_true",
                      help="Shorter report without call stacks and logs")
     args = ap.parse_args()
 
-    server_dir = args.server_dir or _read_server_dir(args.config)
-    if not server_dir.exists():
-        print(f"Error: Server directory not found: {server_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    reports = collect_crashes(server_dir)
-
-    if args.last and reports:
-        reports = [reports[0]]
+    targets = _resolve_targets(args)
 
     if args.json:
-        print(reports_to_json(reports))
-    else:
-        print(format_report(reports, verbose=not args.brief))
+        out: Dict[str, list] = {}
+        for label, server_dir in targets:
+            reports = collect_crashes(server_dir) if server_dir.exists() else []
+            if args.last and reports:
+                reports = [reports[0]]
+            out[label] = json.loads(reports_to_json(reports))
+        print(json.dumps(out, indent=2))
+        return
+
+    blocks: List[str] = []
+    for label, server_dir in targets:
+        header = f"\n##### SERVER: {label}  ({server_dir}) #####"
+        if not server_dir.exists():
+            blocks.append(header + "\n  (server-files directory not found - server not installed yet?)\n")
+            continue
+        reports = collect_crashes(server_dir)
+        if args.last and reports:
+            reports = [reports[0]]
+        blocks.append(header + "\n" + format_report(reports, verbose=not args.brief))
+
+    print("\n".join(blocks))
 
 
 if __name__ == "__main__":

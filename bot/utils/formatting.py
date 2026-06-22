@@ -1,3 +1,5 @@
+"""Formatting helpers used across embeds and cogs."""
+
 from __future__ import annotations
 
 import re
@@ -6,6 +8,7 @@ from typing import List
 
 
 def relative_time(dt: datetime) -> str:
+    """Return a human-friendly relative timestamp like '3m ago'."""
     now = datetime.now(timezone.utc)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
@@ -24,21 +27,31 @@ def relative_time(dt: datetime) -> str:
 
 
 def truncate(text: str, max_len: int = 1024) -> str:
+    """Truncate text to fit within a Discord embed field."""
     if len(text) <= max_len:
         return text
     return text[: max_len - 3] + "…"
 
 
 def code_block(text: str, lang: str = "") -> str:
+    """Wrap text in a Discord code block."""
     return f"```{lang}\n{text}\n```"
 
 
 def parse_player_line(line: str) -> dict | None:
-    # "0. PlayerName, 000290c781d649cabc4a635ad2a5aa45"
+    """Parse a single line from the ListPlayers RCON response.
+
+    ARK format:  ``0. PlayerName, EOS_<hex> (EOS)``
+    or legacy:   ``0. PlayerName, 76561198012345678``
+
+    Returns a dict with keys: index, name, id  – or None on parse failure.
+    """
+    # Modern EOS format
     m = re.match(r"(\d+)\.\s+(.+?),\s+(EOS_[0-9a-f]+|[0-9]{17})", line.strip())
     if m:
         return {"index": int(m.group(1)), "name": m.group(2).strip(), "id": m.group(3)}
 
+    # Fallback: try less strict parsing
     m = re.match(r"(\d+)\.\s+(.+?),\s+(\S+)", line.strip())
     if m:
         return {"index": int(m.group(1)), "name": m.group(2).strip(), "id": m.group(3)}
@@ -47,6 +60,7 @@ def parse_player_line(line: str) -> dict | None:
 
 
 def parse_player_list(raw: str) -> List[dict]:
+    """Parse the full ListPlayers RCON response into a list of player dicts."""
     players = []
     for line in raw.strip().splitlines():
         line = line.strip()
@@ -59,6 +73,7 @@ def parse_player_list(raw: str) -> List[dict]:
 
 
 def player_table(players: List[dict]) -> str:
+    """Format a list of player dicts into a Discord-friendly display."""
     if not players:
         return "No players online."
 
@@ -69,6 +84,7 @@ def player_table(players: List[dict]) -> str:
 
 
 def countdown_label(seconds: int) -> str:
+    """Return a human-readable countdown string."""
     if seconds >= 3600:
         h = seconds // 3600
         m = (seconds % 3600) // 60

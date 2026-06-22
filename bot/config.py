@@ -1,12 +1,26 @@
+"""Centralised configuration for the ASA cluster tooling.
+
+Reads the shared ``/opt/asa-cluster/config.ini`` (override with the
+``ASA_CONFIG`` environment variable). Supports a multi-server cluster via
+the ``[servers]`` list and one ``[server.<key>]`` section per map.
+"""
+
 from __future__ import annotations
 
 import configparser
 import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
+try:  # discord is only needed for server_choices(); keep config importable without it
+    from discord import app_commands
+except Exception:  # pragma: no cover
+    app_commands = None  # type: ignore[assignment]
+
+# Locate the shared config file.  Override with the ASA_CONFIG env var.
 _DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config.ini"
-_CONFIG_PATH = Path(os.environ.get("CARNOKIT_CONFIG", str(_DEFAULT_CONFIG)))
+_CONFIG_PATH = Path(os.environ.get("ASA_CONFIG", str(_DEFAULT_CONFIG)))
 
 
 def _split_ids(raw: str) -> List[int]:
@@ -16,47 +30,92 @@ def _split_ids(raw: str) -> List[int]:
 
 
 def _opt_int(value: str) -> Optional[int]:
-    value = value.strip()
+    value = (value or "").strip()
     if not value:
         return None
     return int(value)
 
 
+@dataclass
+class ServerConfig:
+    """Settings for a single map in the cluster."""
+
+    key: str
+    name: str
+    map: str
+    game_port: int
+    rcon_port: int
+    container: str
+    log_file: Path
+    chat_bridge_channel_id: Optional[int] = None
+
+    @property
+    def server_files(self) -> Path:
+        """Path to this server's ``server-files`` directory.
+
+        Derived from ``log_file`` which is
+        ``<server-files>/ShooterGame/Saved/Logs/ShooterGame.log``.
+        """
+        return self.log_file.parents[3]
+
+
 class Settings:
+    """All configuration used by the cluster tooling, loaded from config.ini."""
+
     def __init__(self, path: Path = _CONFIG_PATH):
         cp = configparser.ConfigParser()
         cp.read(path, encoding="utf-8")
-        self.server_dir = Path(cp.get("server", "dir", fallback="C:/ASA/server"))
-        self.server_map = cp.get("server", "map", fallback="TheIsland_WP")
-        self.server_session_name = cp.get("server", "session_name", fallback="GameServer")
-        self.server_join_password = cp.get("server", "join_password", fallback="")
-        self.server_admin_password = cp.get("server", "admin_password", fallback="")
-        self.server_max_players = cp.getint("server", "max_players", fallback=70)
-        self.log_file_path = Path(cp.get(
-            "server", "log_file",
-            fallback="C:/ASA/server/ShooterGame/Saved/Logs/ShooterGame.log",
-        ))
+        self._cp = cp
 
-        self.rcon_host = cp.get("rcon", "host", fallback="127.0.0.1")
-        self.rcon_port = cp.getint("rcon", "port", fallback=27020)
-        self.rcon_password = cp.get("rcon", "password", fallback="")
+        # [cluster]
+        self.base_dir = Path(cp.get("cluster", "base_dir", fallback="/opt/asa-cluster"))
+        self.compose_project = cp.get("cluster", "compose_project", fallback="asa-cluster")
+        self.cluster_id = cp.get("cluster", "cluster_id", fallback="arkcluster01")
+        self.mods = cp.get("cluster", "mods", fallback="")
+        self.admin_password = cp.get("cluster", "admin_password", fallback="")
+        self.join_password = cp.get("cluster", "join_password", fallback="")
+        self.max_players = cp.getint("cluster", "max_players", fallback=70)
+        self.rcon_host = cp.get("cluster", "rcon_host", fallback="127.0.0.1")
 
+        # [discord]
         self.discord_token = cp.get("discord", "token", fallback="")
         self._admin_role_ids = cp.get("discord", "admin_role_ids", fallback="")
         self._mod_role_ids = cp.get("discord", "mod_role_ids", fallback="")
         self._owner_user_ids = cp.get("discord", "owner_user_ids", fallback="")
-        self.alerts_channel_id = _opt_int(
-            cp.get("discord", "alerts_channel_id", fallback="")
-        )
+        self.alerts_channel_id = _opt_int(cp.get("discord", "alerts_channel_id", fallback=""))
+        self.chat_poll_seconds = cp.getint("discord", "chat_poll_seconds", fallback=5)
 
-        self.steamcmd_path = Path(cp.get(
-            "steamcmd", "path", fallback="C:/ASA/steamcmd/steamcmd.exe",
-        ))
+        # [steamcmd]
+        self.asa_app_id = cp.get("steamcmd", "asa_app_id", fallback="2430930")
         self.update_check_minutes = cp.getint("steamcmd", "update_check_minutes", fallback=15)
         self.update_countdown_minutes = cp.getint("steamcmd", "update_countdown_minutes", fallback=30)
 
+        # [scheduler]
         self.schedule_file = Path(cp.get("scheduler", "schedule_file", fallback="schedules.json"))
-        self.auto_save_minutes = cp.getint("scheduler", "auto_save_minutes", fallback=15)
+        self.auto_save_minutes = cp.getint("scheduler", "auto_save_minutes", fallback=10)
+
+        # [servers] + [server.<key>]
+        self.servers: Dict[str, ServerConfig] = {}
+        raw_list = cp.get("servers", "list", fallback="")
+        for key in [k.strip() for k in raw_list.split(",") if k.strip()]:
+            section = f"server.{key}"
+            if not cp.has_section(section):
+                continue
+            self.servers[key] = ServerConfig(
+                key=key,
+                name=cp.get(section, "name", fallback=key),
+                map=cp.get(section, "map", fallback="TheIsland_WP"),
+                game_port=cp.getint(section, "game_port", fallback=7777),
+                rcon_port=cp.getint(section, "rcon_port", fallback=27020),
+                container=cp.get(section, "container", fallback=f"asa-{key}"),
+                log_file=Path(cp.get(section, "log_file", fallback="")),
+                chat_bridge_channel_id=_opt_int(
+                    cp.get(section, "chat_bridge_channel_id", fallback="")
+                ),
+            )
+
+    # --- Derived helpers ---
+
     @property
     def admin_roles(self) -> List[int]:
         return _split_ids(self._admin_role_ids)
@@ -70,24 +129,25 @@ class Settings:
         return _split_ids(self._owner_user_ids)
 
     @property
-    def server_exe(self) -> Path:
-        return self.server_dir / "ShooterGame" / "Binaries" / "Win64" / "ArkAscendedServer.exe"
+    def mods_list(self) -> List[str]:
+        return [m.strip() for m in self.mods.split(",") if m.strip()]
 
     @property
-    def server_launch_args(self) -> str:
-        parts = [
-            f"{self.server_map}?listen",
-            f"?SessionName={self.server_session_name}",
-            f"?Port=7777",
-            f"?QueryPort=27015",
-            f"?MaxPlayers={self.server_max_players}",
-            f"?ServerAdminPassword={self.server_admin_password}",
-            f"?RCONPort={self.rcon_port}",
-            f"?RCONEnabled=True",
-        ]
-        if self.server_join_password:
-            parts.append(f"?ServerPassword={self.server_join_password}")
-        return "".join(parts) + " -NoBattlEye -log"
+    def default_server_key(self) -> str:
+        return next(iter(self.servers), "")
+
+    def server(self, key: Optional[str]) -> ServerConfig:
+        """Return the requested server, or the first one if key is falsy/unknown."""
+        if key and key in self.servers:
+            return self.servers[key]
+        return self.servers[self.default_server_key]
 
 
 cfg = Settings()
+
+
+def server_choices() -> list:
+    """Discord ``app_commands.Choice`` list for a ``server`` command argument."""
+    if app_commands is None:
+        return []
+    return [app_commands.Choice(name=s.name, value=k) for k, s in cfg.servers.items()]

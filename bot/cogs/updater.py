@@ -1,3 +1,5 @@
+"""Auto-update cog - detect new ARK builds and orchestrate the cluster update."""
+
 from __future__ import annotations
 
 import discord
@@ -5,13 +7,13 @@ from discord import app_commands
 from discord.ext import commands
 
 from config import cfg
-from rcon.client import RconClient
 from services.update_checker import UpdateChecker
 from utils import embeds
 from utils.permissions import require_admin, require_owner
 
 
 class ConfirmUpdateView(discord.ui.View):
+    """Confirmation prompt for a forced update."""
 
     def __init__(self, *, timeout: float = 30):
         super().__init__(timeout=timeout)
@@ -31,17 +33,19 @@ class ConfirmUpdateView(discord.ui.View):
 
 
 class UpdaterCog(commands.GroupCog, group_name="update"):
+    """Commands for checking and applying ARK server updates across the cluster."""
 
-    def __init__(self, bot: commands.Bot, rcon: RconClient):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.rcon = rcon
-        self.checker = UpdateChecker(rcon, bot)
+        self.checker = UpdateChecker(bot)
 
     async def cog_load(self) -> None:
         self.checker.start()
 
     async def cog_unload(self) -> None:
         self.checker.stop()
+
+    # ── /update check ─────────────────────────────────────────────────────
 
     @app_commands.command(name="check", description="Check if a server update is available")
     @require_admin
@@ -58,6 +62,8 @@ class UpdaterCog(commands.GroupCog, group_name="update"):
             )
         await interaction.followup.send(embed=embed)
 
+    # ── /update status ────────────────────────────────────────────────────
+
     @app_commands.command(name="status", description="Show current and latest build info")
     async def status(self, interaction: discord.Interaction):
         embed = embeds.update_status(
@@ -68,16 +74,18 @@ class UpdaterCog(commands.GroupCog, group_name="update"):
         )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="now", description="Force an immediate update cycle with countdown")
+    # ── /update now ───────────────────────────────────────────────────────
+
+    @app_commands.command(name="now", description="Force an immediate cluster update cycle with countdown")
     @require_owner
     async def now(self, interaction: discord.Interaction):
         view = ConfirmUpdateView()
         await interaction.response.send_message(
             embed=embeds.warning(
-                "Force Update",
+                "Force Cluster Update",
                 (
                     f"This will start a **{cfg.update_countdown_minutes}-minute** countdown, "
-                    f"then save, shut down, update via SteamCMD, and restart the server.\n\n"
+                    f"then save, restart, and update **every map** in the cluster.\n\n"
                     f"Continue?"
                 ),
             ),
@@ -90,7 +98,7 @@ class UpdaterCog(commands.GroupCog, group_name="update"):
                 embed=embeds.info(
                     "Update Started",
                     f"Countdown has begun ({cfg.update_countdown_minutes} min). "
-                    f"Players will be warned in-game.",
+                    f"Players will be warned in-game on every map.",
                 ),
                 view=None,
             )
@@ -103,5 +111,4 @@ class UpdaterCog(commands.GroupCog, group_name="update"):
 
 
 async def setup(bot: commands.Bot):
-    rcon: RconClient = bot.rcon  # type: ignore[attr-defined]
-    await bot.add_cog(UpdaterCog(bot, rcon))
+    await bot.add_cog(UpdaterCog(bot))

@@ -1,3 +1,5 @@
+"""Parse UE5 crash dumps, crashstack files, and ARK server logs."""
+
 from __future__ import annotations
 
 import re
@@ -204,6 +206,8 @@ def find_log_for_crash(logs_dir: Path, crash_time: Optional[datetime]) -> Option
     return logs[-1] if logs else None
 
 
+# ── Analysis ──────────────────────────────────────────────────────────────────
+
 _KNOWN_RCON_FUNCTIONS = {
     "RCONClientConnection::ProcessRCONPacket",
     "RCONClientConnection::Tick",
@@ -221,7 +225,7 @@ _CHEAT_FUNCTIONS = {
     "UCheatManager::ProcessConsoleExec": "console command",
 }
 
-# Known engine modules (not mods)
+# Known ARK/UE5 engine modules (not mods)
 _ENGINE_MODULES = {
     "ArkAscendedServer", "ArkAscendedServer.exe",
     "kernel32", "ntdll", "KERNELBASE",
@@ -319,6 +323,8 @@ def _analyze(report: CrashReport) -> None:
     else:
         report.actionable = "Check for game updates and validate server files."
 
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _text(parent: ET.Element, tag: str) -> str:
     """Get text content of a child element, or empty string."""

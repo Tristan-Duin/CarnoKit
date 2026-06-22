@@ -1,9 +1,12 @@
+"""Paginated embed view with Prev/Next buttons."""
+
 from __future__ import annotations
 
 import discord
 
 
 class PaginatedView(discord.ui.View):
+    """Cycles through a list of embeds with navigation buttons."""
 
     def __init__(self, embeds: list[discord.Embed], *, timeout: float = 180):
         super().__init__(timeout=timeout)

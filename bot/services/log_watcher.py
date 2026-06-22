@@ -1,20 +1,17 @@
+"""Watches one server's ShooterGame.log for player/server events and posts alerts."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import re
 from collections import deque
-from pathlib import Path
-from typing import TYPE_CHECKING, Deque, List, Optional
+from typing import Deque, List, Optional
 
 import discord
 
-from config import cfg
+from config import ServerConfig, cfg
 from utils import embeds
-
-if TYPE_CHECKING:
-    pass
 
 log = logging.getLogger(__name__)
 
@@ -30,14 +27,18 @@ _MAX_HISTORY = 2000  # lines kept in memory for /logs tail
 
 
 class LogWatcher:
+    """Tails one ARK server log file and detects notable events."""
 
-    def __init__(self, bot: discord.Client, log_path: Optional[Path] = None):
+    def __init__(self, bot: discord.Client, server: ServerConfig):
         self.bot = bot
-        self.path = log_path or cfg.log_file_path
+        self.server = server
+        self.path = server.log_file
         self._task: Optional[asyncio.Task] = None
         self._history: Deque[str] = deque(maxlen=_MAX_HISTORY)
         self._offset: int = 0
         self._enabled = True
+
+    # ── Public queries ────────────────────────────────────────────────────
 
     def tail(self, n: int = 25) -> List[str]:
         """Return the last *n* log lines from memory."""
@@ -49,17 +50,21 @@ class LogWatcher:
         q = query.lower()
         return [l for l in self._history if q in l.lower()][:max_results]
 
+    # ── Lifecycle ─────────────────────────────────────────────────────────
+
     def start(self) -> None:
         if self._task and not self._task.done():
             return
         self._task = asyncio.create_task(self._watch_loop())
-        log.info("Log watcher started: %s", self.path)
+        log.info("Log watcher started for %s: %s", self.server.name, self.path)
 
     def stop(self) -> None:
         if self._task and not self._task.done():
             self._task.cancel()
         self._task = None
-        log.info("Log watcher stopped.")
+        log.info("Log watcher stopped for %s.", self.server.name)
+
+    # ── Internals ─────────────────────────────────────────────────────────
 
     async def _watch_loop(self) -> None:
         # On first start, seek to end of file so we don't replay old events.
@@ -77,7 +82,7 @@ class LogWatcher:
                 try:
                     await self._read_new_lines()
                 except Exception as exc:
-                    log.debug("Log watcher read error: %s", exc)
+                    log.debug("Log watcher read error (%s): %s", self.server.name, exc)
         except asyncio.CancelledError:
             pass
 
@@ -87,7 +92,7 @@ class LogWatcher:
 
         size = self.path.stat().st_size
         if size < self._offset:
-            # File was rotated / truncated – reset.
+            # File was rotated / truncated - reset.
             self._offset = 0
 
         if size == self._offset:
@@ -116,7 +121,9 @@ class LogWatcher:
             m = pattern.search(line)
             if m:
                 name = m.group("name").strip()
-                embed = embeds.player_event(event_type, name, detail=line.strip())
+                embed = embeds.player_event(
+                    event_type, name, detail=line.strip(), server=self.server.name
+                )
                 try:
                     await channel.send(embed=embed)
                 except Exception as exc:

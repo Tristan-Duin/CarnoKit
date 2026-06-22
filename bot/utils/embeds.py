@@ -1,3 +1,5 @@
+"""Reusable Discord embed builders for every command category."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -25,6 +27,8 @@ def _ts() -> str:
     return datetime.now(timezone.utc).strftime("%H:%M:%S UTC")
 
 
+# ── Generic helpers ───────────────────────────────────────────────────────────
+
 def success(title: str, description: str = "") -> discord.Embed:
     return discord.Embed(title=title, description=description, color=COLOR_OK).set_footer(text=_ts())
 
@@ -41,6 +45,8 @@ def info(title: str, description: str = "") -> discord.Embed:
     return discord.Embed(title=title, description=description, color=COLOR_INFO).set_footer(text=_ts())
 
 
+# ── Server status ─────────────────────────────────────────────────────────────
+
 def server_status(
     *,
     online: bool,
@@ -49,9 +55,11 @@ def server_status(
     map_name: str,
     rcon_host: str,
     rcon_port: int,
+    server_name: str = "",
 ) -> discord.Embed:
     status = "Online" if online else "Offline"
-    embed = discord.Embed(title="Server Status", color=COLOR_OK if online else COLOR_ERR)
+    title = f"{server_name} - Server Status" if server_name else "Server Status"
+    embed = discord.Embed(title=title, color=COLOR_OK if online else COLOR_ERR)
     embed.add_field(name="Status", value=status, inline=True)
     embed.add_field(name="Players", value=str(player_count), inline=True)
     embed.add_field(name="Map", value=map_name, inline=True)
@@ -65,6 +73,8 @@ def server_status(
     embed.set_footer(text=_ts())
     return embed
 
+
+# ── Player list ───────────────────────────────────────────────────────────────
 
 def player_list_embed(raw: str) -> discord.Embed:
     players = parse_player_list(raw)
@@ -81,6 +91,8 @@ def player_list_embed(raw: str) -> discord.Embed:
     return embed
 
 
+# ── RCON raw response ─────────────────────────────────────────────────────────
+
 def rcon_response(command: str, response: str) -> discord.Embed:
     embed = discord.Embed(title="RCON", color=COLOR_INFO)
     embed.add_field(name="Command", value=f"`{command}`", inline=False)
@@ -90,9 +102,11 @@ def rcon_response(command: str, response: str) -> discord.Embed:
     return embed
 
 
+# ── Update / restart ──────────────────────────────────────────────────────────
+
 def update_available(current_build: str, latest_build: str) -> discord.Embed:
     embed = discord.Embed(
-        title="Server Update Available",
+        title="ARK Server Update Available",
         description=(
             f"A new server update has been detected.\n\n"
             f"**Current Build:** `{current_build}`\n"
@@ -137,6 +151,8 @@ def update_status(
     return embed
 
 
+# ── Scheduler ─────────────────────────────────────────────────────────────────
+
 def schedule_list(schedules: List[dict]) -> discord.Embed:
     embed = discord.Embed(title="Active Schedules", color=COLOR_INFO)
     if not schedules:
@@ -152,6 +168,8 @@ def schedule_list(schedules: List[dict]) -> discord.Embed:
     return embed
 
 
+# ── Log entries ───────────────────────────────────────────────────────────────
+
 def log_tail(lines: List[str], title: str = "Server Logs") -> discord.Embed:
     body = "\n".join(lines) if lines else "(no log entries)"
     embed = discord.Embed(title=title, color=COLOR_INFO)
@@ -160,18 +178,57 @@ def log_tail(lines: List[str], title: str = "Server Logs") -> discord.Embed:
     return embed
 
 
-def chat_message(player: str, message: str, *, tribe: str = "") -> discord.Embed:
+# ── Chat bridge ───────────────────────────────────────────────────────────────
+
+def chat_message(player: str, message: str, *, tribe: str = "", server: str = "") -> discord.Embed:
     title = player
     if tribe:
         title += f" [{tribe}]"
+    if server:
+        title = f"({server}) {title}"
     return discord.Embed(title=title, description=message, color=COLOR_INFO)
 
 
-def player_event(event_type: str, player_name: str, detail: str = "") -> discord.Embed:
+# ── Alerts ────────────────────────────────────────────────────────────────────
+
+def player_event(event_type: str, player_name: str, detail: str = "", server: str = "") -> discord.Embed:
+    title = f"Player {event_type.title()}"
+    if server:
+        title = f"[{server}] {title}"
     embed = discord.Embed(
-        title=f"Player {event_type.title()}",
+        title=title,
         description=f"**{player_name}**" + (f"\n{detail}" if detail else ""),
         color=COLOR_INFO if event_type == "join" else COLOR_WARN,
     )
+    embed.set_footer(text=_ts())
+    return embed
+
+
+# ── Cluster ─────────────────────────────────────────────────────
+
+def cluster_status(rows: List[dict]) -> discord.Embed:
+    """Summarise every server in the cluster.
+
+    Each row: {name, online, players, map, game_port}.
+    """
+    online_count = sum(1 for r in rows if r.get("online"))
+    if rows and online_count == len(rows):
+        color = COLOR_OK
+    elif online_count:
+        color = COLOR_WARN
+    else:
+        color = COLOR_ERR
+    embed = discord.Embed(
+        title=f"Cluster Status ({online_count}/{len(rows)} online)",
+        color=color,
+    )
+    for r in rows:
+        state = "Online" if r.get("online") else "Offline"
+        players = f"{r.get('players', 0)} players" if r.get("online") else "-"
+        embed.add_field(
+            name=r.get("name", "?"),
+            value=f"{state}\n`{r.get('map','')}`\nPort `{r.get('game_port','')}` - {players}",
+            inline=True,
+        )
     embed.set_footer(text=_ts())
     return embed

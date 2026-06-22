@@ -1,8 +1,10 @@
+"""Minimal synchronous RCON client for health checks and server warnings."""
+
 from __future__ import annotations
 
+import logging
 import socket
 import struct
-import logging
 
 log = logging.getLogger("watchdog.rcon")
 
@@ -26,6 +28,23 @@ def _recv(sock: socket.socket) -> tuple[int, int, str] | None:
     req_id, pkt_type = struct.unpack("<ii", data[:8])
     body = data[8:-2].decode("utf-8", errors="replace")
     return req_id, pkt_type, body
+
+
+def is_alive(host: str, port: int, password: str, timeout: float = 5.0) -> bool:
+    """Return True if the server accepts an RCON connection and authenticates."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        sock.connect((host, port))
+        sock.sendall(_encode(1, 3, password))
+        resp = _recv(sock)
+        if resp is None or resp[0] == -1:
+            return False
+        return True
+    except Exception:
+        return False
+    finally:
+        sock.close()
 
 
 def send_command(host: str, port: int, password: str, command: str, timeout: float = 5.0) -> str:
