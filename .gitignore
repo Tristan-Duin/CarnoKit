@@ -23,3 +23,9 @@ schedules.json
 # OS
 Thumbs.db
 .DS_Store
+
+# ASA per-map server data (saves, dinos, players) - VPS runtime only, never commit
+island/
+scorched/
+extinction/
+cluster-shared/

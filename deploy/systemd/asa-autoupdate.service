@@ -1,0 +1,8 @@
+[Unit]
+Description=CarnoKit auto-update (pull origin/main and restart tooling)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/asa-autoupdate.sh
