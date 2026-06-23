@@ -178,17 +178,6 @@ def log_tail(lines: List[str], title: str = "Server Logs") -> discord.Embed:
     return embed
 
 
-# ── Chat bridge ───────────────────────────────────────────────────────────────
-
-def chat_message(player: str, message: str, *, tribe: str = "", server: str = "") -> discord.Embed:
-    title = player
-    if tribe:
-        title += f" [{tribe}]"
-    if server:
-        title = f"({server}) {title}"
-    return discord.Embed(title=title, description=message, color=COLOR_INFO)
-
-
 # ── Alerts ────────────────────────────────────────────────────────────────────
 
 def player_event(event_type: str, player_name: str, detail: str = "", server: str = "") -> discord.Embed:

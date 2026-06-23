@@ -47,7 +47,6 @@ class ServerConfig:
     rcon_port: int
     container: str
     log_file: Path
-    chat_bridge_channel_id: Optional[int] = None
 
     @property
     def server_files(self) -> Path:
@@ -83,7 +82,6 @@ class Settings:
         self._mod_role_ids = cp.get("discord", "mod_role_ids", fallback="")
         self._owner_user_ids = cp.get("discord", "owner_user_ids", fallback="")
         self.alerts_channel_id = _opt_int(cp.get("discord", "alerts_channel_id", fallback=""))
-        self.chat_poll_seconds = cp.getint("discord", "chat_poll_seconds", fallback=5)
 
         # [steamcmd]
         self.asa_app_id = cp.get("steamcmd", "asa_app_id", fallback="2430930")
@@ -109,9 +107,6 @@ class Settings:
                 rcon_port=cp.getint(section, "rcon_port", fallback=27020),
                 container=cp.get(section, "container", fallback=f"asa-{key}"),
                 log_file=Path(cp.get(section, "log_file", fallback="")),
-                chat_bridge_channel_id=_opt_int(
-                    cp.get(section, "chat_bridge_channel_id", fallback="")
-                ),
             )
 
     # --- Derived helpers ---
