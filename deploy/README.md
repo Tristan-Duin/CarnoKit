@@ -12,7 +12,7 @@ maintained `mschnitzer/asa-linux-server` image via Proton.
 - Mods on every map: Cybers Structures QoL+ (`940975`), Configurable
   Cryopods (`929169`), Shad's Critter Reworks (`929094`).
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
-  `/admin`, `/chat`, `/logs`, `/schedule`, `/update`).
+  `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.
 - A crash analyzer and a SteamCMD-based auto-updater.
 
@@ -106,7 +106,7 @@ All tooling reads `/opt/asa-cluster/config.ini`. Commands accept an optional
 `server` argument that defaults to the first configured map.
 - **Bot**: `systemctl status asa-bot`, logs via `journalctl -u asa-bot -f`.
   Key commands: `/cluster status`, `/server status|save|motd|time|raw`,
-  `/players ...`, `/admin ...`, `/chat send|toggle|status`,
+  `/players ...`, `/admin ...`,
   `/logs tail|search`, `/schedule restart|broadcast|auto-save`,
   `/update check|status|now`.
 - **Watchdog**: probes each map's RCON; after repeated failures it runs

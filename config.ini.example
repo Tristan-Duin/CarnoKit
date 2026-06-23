@@ -40,7 +40,6 @@ owner_user_ids =
 
 # Channel for cluster-wide alerts (joins/leaves/crashes/updates).
 alerts_channel_id =
-chat_poll_seconds = 5
 
 [steamcmd]
 asa_app_id = 2430930
@@ -73,8 +72,6 @@ game_port = 7777
 rcon_port = 27020
 container = asa-island
 log_file = /opt/asa-cluster/island/server-files/ShooterGame/Saved/Logs/ShooterGame.log
-# Optional per-server Discord channel for the chat bridge (blank = disabled).
-chat_bridge_channel_id =
 
 [server.scorched]
 name = Scorched Earth
@@ -83,7 +80,6 @@ game_port = 7778
 rcon_port = 27021
 container = asa-scorched
 log_file = /opt/asa-cluster/scorched/server-files/ShooterGame/Saved/Logs/ShooterGame.log
-chat_bridge_channel_id =
 
 [server.extinction]
 name = Extinction
@@ -92,4 +88,3 @@ game_port = 7779
 rcon_port = 27022
 container = asa-extinction
 log_file = /opt/asa-cluster/extinction/server-files/ShooterGame/Saved/Logs/ShooterGame.log
-chat_bridge_channel_id =

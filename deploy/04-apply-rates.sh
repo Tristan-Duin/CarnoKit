@@ -40,17 +40,15 @@ read -r -d '' GAME_INI <<'GAMEINI' || true
 [/Script/ShooterGame.ShooterGameMode]
 MatingIntervalMultiplier=0.5
 EggHatchSpeedMultiplier=10.0
-BabyMatureSpeedMultiplier=15.0
-BabyCuddleIntervalMultiplier=0.2
 BabyImprintAmountMultiplier=2.0
-BabyFoodConsumptionSpeedMultiplier=0.5
+BabyFoodConsumptionSpeedMultiplier=2.0
 LayEggIntervalMultiplier=0.5
 CropGrowthSpeedMultiplier=2.0
 PoopIntervalMultiplier=0.5
 GlobalSpoilingTimeMultiplier=2.0
 GlobalItemDecompositionTimeMultiplier=2.0
 GlobalCorpseDecompositionTimeMultiplier=2.0
-CraftingSkillBonusMultiplier=2.0
+CraftingSkillBonusMultiplier=1.5
 bAllowUnlimitedRespecs=True
 bAllowPlatformSaddleMultiFloors=True
 ResourceNoReplenishRadiusStructures=0.5
@@ -108,13 +106,17 @@ desired = collections.OrderedDict()
 
 desired["ServerSettings"] = collections.OrderedDict([
     ("ServerPVE", "True"),
+    ("ProximityChat", "False"),
     ("bPvEAllowTribeWar", "False"),
-    ("XPMultiplier", "3.0"),
-    ("HarvestAmountMultiplier", "2.5"),
+    ("XPMultiplier", "2.0"),
+    ("EnableCryoSicknessPVE", "False"),
+    ("HarvestAmountMultiplier", "2.0"),
     ("HarvestHealthMultiplier", "1.0"),
-    ("TamingSpeedMultiplier", "5.0"),
-    ("ResourcesRespawnPeriodMultiplier", "0.5"),
-    ("ItemStackSizeMultiplier", "2.0"),
+    ("TamingSpeedMultiplier", "8.0"),
+    ("BabyMatureSpeedMultiplier", "8.0"),
+    ("BabyCuddleIntervalMultiplier", "0.15"),
+    ("ResourcesRespawnPeriodMultiplier", "0.7"),
+    ("ItemStackSizeMultiplier", "1.5"),
     ("AllowThirdPersonPlayer", "True"),
     ("ServerCrosshair", "True"),
     ("ShowMapPlayerLocation", "True"),
@@ -124,7 +126,9 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("DisableDinoDecayPvE", "True"),
     ("OverrideOfficialDifficulty", "5.0"),
     ("DifficultyOffset", "1.0"),
-    ("NightTimeSpeedScale", "1.5"),
+    ("DayCycleSpeedScale", "0.8"),
+    ("DayTimeSpeedScale", "0.8"),
+    ("NightTimeSpeedScale", "1.2"),
     ("bUseCorpseLocator", "True"),
     ("AllowAnyoneBabyImprintCuddle", "True"),
     ("TheMaxStructuresInRange", "10500.0"),
@@ -135,6 +139,10 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("PreventUploadItems", "False"),
     ("PreventUploadDinos", "False"),
     ("NoTributeDownloads", "False"),
+    ("AdminLogging", "True"),
+    ("ShowFloatingDamageText", "True"),
+    ("AlwaysAllowStructurePickup", "True"),
+    ("NonPermanentDiseases", "True"),
 ])
 
 if session_name:

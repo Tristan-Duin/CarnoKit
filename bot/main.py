@@ -31,7 +31,6 @@ EXTENSIONS = [
     "cogs.cluster",
     "cogs.server",
     "cogs.players",
-    "cogs.chat",
     "cogs.scheduler",
     "cogs.admin",
     "cogs.updater",
@@ -44,10 +43,6 @@ class ArkBot(commands.Bot):
 
     def __init__(self) -> None:
         intents = discord.Intents.default()
-        # message_content is a privileged intent required for the chat bridge
-        # to relay Discord channel messages to ARK automatically.
-        # To enable it: Discord Developer Portal -> Bot -> Message Content Intent
-        # Without it the bot still works - use /chat send instead.
         super().__init__(command_prefix="!", intents=intents)
 
         # One shared RCON client per server (created once, used by all cogs).
