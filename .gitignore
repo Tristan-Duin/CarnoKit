@@ -29,3 +29,10 @@ island/
 scorched/
 extinction/
 cluster-shared/
+
+# Secrets / local env (public repo - never commit)
+.env
+
+# Editor / script backups
+*.bak
+*.bak.*
