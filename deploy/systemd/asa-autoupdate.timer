@@ -1,0 +1,10 @@
+[Unit]
+Description=Run CarnoKit auto-update periodically
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=asa-autoupdate.service
+
+[Install]
+WantedBy=timers.target
