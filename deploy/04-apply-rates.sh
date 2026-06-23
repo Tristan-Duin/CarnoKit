@@ -38,11 +38,21 @@ docker compose -p asa-cluster down
 # These settings are identical on every map.
 read -r -d '' GAME_INI <<'GAMEINI' || true
 [/Script/ShooterGame.ShooterGameMode]
+# --- Breeding & imprinting (baby dinos) ---
+# Cuddle interval is the inverse of maturation so 100% imprint stays
+# achievable (mature 10x -> cuddle interval 0.1); generous grace + slow
+# imprint-quality loss make hands-off raising forgiving.
 MatingIntervalMultiplier=0.5
+MatingSpeedMultiplier=2.0
 EggHatchSpeedMultiplier=10.0
-BabyImprintAmountMultiplier=2.0
-BabyFoodConsumptionSpeedMultiplier=2.0
 LayEggIntervalMultiplier=0.5
+BabyMatureSpeedMultiplier=10.0
+BabyFoodConsumptionSpeedMultiplier=1.1
+BabyCuddleIntervalMultiplier=0.1
+BabyCuddleGracePeriodMultiplier=3.0
+BabyCuddleLoseImprintQualitySpeedMultiplier=0.1
+BabyImprintAmountMultiplier=2.0
+BabyImprintingStatScaleMultiplier=1.0
 CropGrowthSpeedMultiplier=2.0
 PoopIntervalMultiplier=0.5
 GlobalSpoilingTimeMultiplier=2.0
@@ -113,8 +123,12 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("HarvestAmountMultiplier", "2.0"),
     ("HarvestHealthMultiplier", "1.0"),
     ("TamingSpeedMultiplier", "8.0"),
-    ("BabyMatureSpeedMultiplier", "8.0"),
-    ("BabyCuddleIntervalMultiplier", "0.15"),
+    # Tamed-dino quality of life (these also affect wild dinos).
+    ("DinoCharacterHealthRecoveryMultiplier", "1.5"),
+    ("DinoCharacterStaminaDrainMultiplier", "0.75"),
+    # Player survival quality of life (slower hunger and thirst).
+    ("PlayerCharacterFoodDrainMultiplier", "0.5"),
+    ("PlayerCharacterWaterDrainMultiplier", "0.5"),
     ("ResourcesRespawnPeriodMultiplier", "0.7"),
     ("ItemStackSizeMultiplier", "1.5"),
     ("AllowThirdPersonPlayer", "True"),
@@ -131,6 +145,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("NightTimeSpeedScale", "1.2"),
     ("bUseCorpseLocator", "True"),
     ("AllowAnyoneBabyImprintCuddle", "True"),
+    ("DisableImprintDinoBuff", "False"),
     ("TheMaxStructuresInRange", "10500.0"),
     ("PreventDownloadSurvivors", "False"),
     ("PreventDownloadItems", "False"),
@@ -197,17 +212,26 @@ for line in lines:
         else:
             sections[current_section].append(line)
 
+# Keys to strip from GameUserSettings.ini if present (relocated to Game.ini
+# or retired) so older runs don't leave stale/duplicate settings behind.
+deprecated = {
+    "ServerSettings": ["BabyMatureSpeedMultiplier", "BabyCuddleIntervalMultiplier"],
+}
+
 for section_name, desired_values in desired.items():
     if section_name not in sections:
         sections[section_name] = []
         order.append(section_name)
 
     remaining = collections.OrderedDict(desired_values)
+    drop = set(deprecated.get(section_name, []))
     updated_body = []
 
     for line in sections[section_name]:
         setting_match = re.match(r"^\s*([A-Za-z0-9_]+)\s*=", line)
 
+        if setting_match and setting_match.group(1) in drop:
+            continue
         if setting_match and setting_match.group(1) in remaining:
             key = setting_match.group(1)
             updated_body.append(f"{key}={remaining.pop(key)}")
@@ -240,17 +264,18 @@ cat <<'NOTE'
 Rates + QoL + mod configs applied to all maps, and the cluster is restarting.
 
 Current major rates:
-  - XP:                    3x
-  - Harvest amount:        2.5x
-  - Taming speed:          5x
-  - General stack size:    2x
+  - XP:                    2x
+  - Harvest amount:        2x
+  - Taming speed:          8x
+  - General stack size:    1.5x
   - Raw Prime Meat stack:  5
   - Raw Mutton stack:      5
   - Giant Bee Honey stack: 5
   - Egg hatch speed:       10x
-  - Baby maturation:       15x
-  - Cuddle frequency:      5x
-  - Imprint amount:        2x
+  - Baby maturation:       10x
+  - Imprint:               2x/cuddle (100% achievable)
+  - Tamed dino healing:    1.5x (stamina drain 0.75x)
+  - Player food/water:     0.5x drain (slower)
 
 IMPORTANT — one-time step:
 
