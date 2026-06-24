@@ -16,9 +16,8 @@ cluster_id = arkcluster01
 
 # CurseForge mod IDs installed on every map:
 #   940975 = Cybers Structures QoL+ (Crossplay)
-#   929169 = Configurable Cryopods
-#   929094 = Shad's Critter Reworks
-mods = 940975,929169,929094
+#   929169 = Configurable Cryopod
+mods = 940975,929169
 
 # RCON + admin password (must match deploy/.env ADMIN_PASSWORD). CHANGE THIS.
 admin_password = CHANGE_ME

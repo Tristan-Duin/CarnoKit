@@ -10,7 +10,7 @@ maintained `mschnitzer/asa-linux-server` image via Proton.
 ## What you get
 - 3 clustered maps sharing characters/dinos (one `cluster-shared` volume).
 - Mods on every map: Cybers Structures QoL+ (`940975`), Configurable
-  Cryopods (`929169`), Shad's Critter Reworks (`929094`).
+  Cryopods (`929169`)
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
   `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.

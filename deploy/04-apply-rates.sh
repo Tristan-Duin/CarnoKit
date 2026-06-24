@@ -2,8 +2,8 @@
 #
 # 04-apply-rates.sh - Apply server rates + QoL + mod configs to every map.
 #
-# Profile: PvE, balanced rates, moderate breeding, normal global stack sizes, 
-# official wild max level 150, and a mildly improved wild-level distribution 
+# Profile: PvE, balanced rates, moderate breeding, normal global stack sizes,
+# official wild max level 150, and a mildly improved wild-level distribution
 # when Custom Dino Levels is installed.
 #
 # Run as root:
@@ -175,8 +175,8 @@ desired["ConfigurableCryopods"] = collections.OrderedDict([
     ("CryoSpeed", "0.2"),
     ("OwnerCryoOnly", "False"),
     ("RestrictedCryoDeploy", "True"),
-    ("CryoRestrictedItems", "True"),
-    ("CryoInventoryItems", "True"),
+    ("CryoRestrictedItems", "False"),
+    ("CryoInventoryItems", "False"),
     ("BossIgnoreDragWeight", "True"),
     ("AllowTribeLogs", "False"),
     ("AllowCuddleReroll", "True"),
