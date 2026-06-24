@@ -2,15 +2,9 @@
 #
 # 04-apply-rates.sh - Apply server rates + QoL + mod configs to every map.
 #
-# Profile: PvE, balanced ~2.5-5x rates, moderate breeding,
-# slightly increased stack sizes, official wild level 150.
-#
-# Raw Prime Meat, Raw Mutton, and Giant Bee Honey are specifically
-# overridden to stack to exactly 5.
-#
-# Edit the values below and re-run any time; it merges in place.
-# The per-map name shown in the server list comes from CLUSTER_NAME below;
-# ServerAdminPassword and other existing keys are preserved.
+# Profile: PvE, balanced rates, moderate breeding, normal global stack sizes, 
+# official wild max level 150, and a mildly improved wild-level distribution 
+# when Custom Dino Levels is installed.
 #
 # Run as root:
 #   sudo bash deploy/04-apply-rates.sh
@@ -19,9 +13,11 @@ set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
 MAPS="island scorched extinction"
+
 # Server-list name prefix; each map appends its label, e.g.
 # "Battling Poverty [Island]". Edit this to rename every server at once.
 CLUSTER_NAME="${CLUSTER_NAME:-Battling Poverty}"
+
 CFG_REL="server-files/ShooterGame/Saved/Config/WindowsServer"
 TS="$(date +%Y%m%d-%H%M%S)"
 
@@ -30,25 +26,36 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
+if [[ ! -d "${BASE_DIR}/deploy" ]]; then
+  echo "Missing deploy directory: ${BASE_DIR}/deploy" >&2
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker was not found in PATH." >&2
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 was not found in PATH." >&2
+  exit 1
+fi
+
 echo "==> Stopping cluster"
 cd "${BASE_DIR}/deploy"
 docker compose -p asa-cluster down
 
-# --- Game.ini: breeding, stats, QoL, and individual item stacks ---
+# --- Game.ini: breeding, stats, QoL, photo mode, and item overrides ---
 # These settings are identical on every map.
 read -r -d '' GAME_INI <<'GAMEINI' || true
 [/Script/ShooterGame.ShooterGameMode]
-# --- Breeding & imprinting (baby dinos) ---
-# Cuddle interval is the inverse of maturation so 100% imprint stays
-# achievable (mature 10x -> cuddle interval 0.1); generous grace + slow
-# imprint-quality loss make hands-off raising forgiving.
-MatingIntervalMultiplier=0.5
+MatingIntervalMultiplier=0.01
 MatingSpeedMultiplier=2.0
 EggHatchSpeedMultiplier=10.0
 LayEggIntervalMultiplier=0.5
 BabyMatureSpeedMultiplier=10.0
 BabyFoodConsumptionSpeedMultiplier=1.1
-BabyCuddleIntervalMultiplier=0.1
+BabyCuddleIntervalMultiplier=0.05
 BabyCuddleGracePeriodMultiplier=3.0
 BabyCuddleLoseImprintQualitySpeedMultiplier=0.1
 BabyImprintAmountMultiplier=2.0
@@ -65,10 +72,9 @@ ResourceNoReplenishRadiusStructures=0.5
 ResourceNoReplenishRadiusPlayers=0.5
 PerLevelStatsMultiplier_Player[7]=3.0
 bUseSingleplayerSettings=False
-
-# Force these normally single-stack items to stack to exactly 5.
-# bIgnoreMultiplier=True prevents the global 2x stack multiplier from
-# increasing these overrides from 5 to 10.
+PerLevelStatsMultiplier_DinoTamed[7]=1.1
+bDisablePhotoMode=False
+PhotoModeRangeLimit=9000
 ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemConsumable_RawPrimeMeat_C",Quantity=(MaxItemQuantity=5,bIgnoreMultiplier=True))
 ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemConsumable_RawMutton_C",Quantity=(MaxItemQuantity=5,bIgnoreMultiplier=True))
 ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemConsumable_Honey_C",Quantity=(MaxItemQuantity=5,bIgnoreMultiplier=True))
@@ -99,11 +105,9 @@ for m in ${MAPS}; do
     extinction) map_label="Extinction" ;;
     *)          map_label="${m}" ;;
   esac
+
   session_name="${CLUSTER_NAME} [${map_label}]"
 
-  # Merge [ServerSettings], [SessionSettings], and mod sections into
-  # GameUserSettings.ini while preserving everything else, including
-  # ServerAdminPassword.
   python3 - "${cfg}/GameUserSettings.ini" "${session_name}" <<'PYEOF'
 import collections
 import re
@@ -122,15 +126,13 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("EnableCryoSicknessPVE", "False"),
     ("HarvestAmountMultiplier", "2.0"),
     ("HarvestHealthMultiplier", "1.0"),
-    ("TamingSpeedMultiplier", "8.0"),
-    # Tamed-dino quality of life (these also affect wild dinos).
+    ("TamingSpeedMultiplier", "6.5"),
     ("DinoCharacterHealthRecoveryMultiplier", "1.5"),
     ("DinoCharacterStaminaDrainMultiplier", "0.75"),
-    # Player survival quality of life (slower hunger and thirst).
     ("PlayerCharacterFoodDrainMultiplier", "0.5"),
     ("PlayerCharacterWaterDrainMultiplier", "0.5"),
-    ("ResourcesRespawnPeriodMultiplier", "0.7"),
-    ("ItemStackSizeMultiplier", "1.5"),
+    ("ResourcesRespawnPeriodMultiplier", "1.0"),
+    ("ItemStackSizeMultiplier", "1.0"),
     ("AllowThirdPersonPlayer", "True"),
     ("ServerCrosshair", "True"),
     ("ShowMapPlayerLocation", "True"),
@@ -154,7 +156,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("PreventUploadItems", "False"),
     ("PreventUploadDinos", "False"),
     ("NoTributeDownloads", "False"),
-    ("AdminLogging", "True"),
+    ("AdminLogging", "False"),
     ("ShowFloatingDamageText", "True"),
     ("AlwaysAllowStructurePickup", "True"),
     ("NonPermanentDiseases", "True"),
@@ -212,10 +214,15 @@ for line in lines:
         else:
             sections[current_section].append(line)
 
-# Keys to strip from GameUserSettings.ini if present (relocated to Game.ini
-# or retired) so older runs don't leave stale/duplicate settings behind.
+# Keys to strip from GameUserSettings.ini if present because they now belong
+# in Game.ini or were retired. This prevents stale duplicate settings.
 deprecated = {
-    "ServerSettings": ["BabyMatureSpeedMultiplier", "BabyCuddleIntervalMultiplier"],
+    "ServerSettings": [
+        "BabyMatureSpeedMultiplier",
+        "BabyCuddleIntervalMultiplier",
+        "PhotoModeRangeLimit",
+        "bDisablePhotoMode",
+    ],
 }
 
 for section_name, desired_values in desired.items():
@@ -232,6 +239,7 @@ for section_name, desired_values in desired.items():
 
         if setting_match and setting_match.group(1) in drop:
             continue
+
         if setting_match and setting_match.group(1) in remaining:
             key = setting_match.group(1)
             updated_body.append(f"{key}={remaining.pop(key)}")
@@ -261,36 +269,57 @@ docker compose -p asa-cluster up -d
 
 cat <<'NOTE'
 
-Rates + QoL + mod configs applied to all maps, and the cluster is restarting.
+Rates + QoL + mod configs were applied to all maps, and the cluster is
+restarting.
 
-Current major rates:
-  - XP:                    2x
-  - Harvest amount:        2x
-  - Taming speed:          8x
-  - General stack size:    1.5x
-  - Raw Prime Meat stack:  5
-  - Raw Mutton stack:      5
-  - Giant Bee Honey stack: 5
-  - Egg hatch speed:       10x
-  - Baby maturation:       10x
-  - Imprint:               2x/cuddle (100% achievable)
-  - Tamed dino healing:    1.5x (stamina drain 0.75x)
-  - Player food/water:     0.5x drain (slower)
+Current major rates and changes:
+  - XP:                         2x
+  - Harvest amount:             2x
+  - Taming speed:               5x (reduced from 8x)
+  - General stack size:         normal / 1x
+  - Raw Prime Meat stack:       5
+  - Raw Mutton stack:           5
+  - Giant Bee Honey stack:      5
+  - Egg hatch speed:            10x
+  - Baby maturation:            10x
+  - Mating cooldown:            0.1x normal
+  - Imprint:                    2x per cuddle
+  - Tamed dino weight/level:    2x
+  - Tamed dino stamina/level:   1.25x
+  - Tamed dino healing:         1.5x
+  - Dino stamina drain:         0.75x
+  - Player food/water drain:    0.5x
+  - Photo Mode range:           9000 (3x default)
+  - Admin commands in chat:     disabled
+  - CS Gravestone engram:       disabled/hidden
+  - Wild max level:             150
+  - Wild level distribution:    Ragnarok-like if Custom Dino Levels is loaded
 
-IMPORTANT — one-time step:
+IMPORTANT — one-time actions:
 
-Once the maps are back online, wipe wild dinos once so the Shad's Critter
-Reworks variants and the official-difficulty level 150 spawns take effect.
+1. Remove existing Cybers Structures gravestones. Hiding the engram prevents
+   new ones from being crafted, but it does not automatically destroy ones
+   that are already placed. Run this once on each map through RCON or the
+   in-game admin console:
 
-In Discord, run this once for each map:
+     DestroyAll Gravestone_CS_C
 
-  /server destroy-wild-dinos
+2. Wipe wild dinos once so the official level-150 setting, Shad's Critter
+   Reworks variants, and the Custom Dino Levels distribution can repopulate:
 
-Or run this through RCON:
+     DestroyWildDinos
 
-  DestroyWildDinos
+   Or in Discord, run this once for each map:
 
-A wild-dino wipe is not required when only changing rates or stack sizes.
+     /server destroy-wild-dinos
+
+3. The higher average wild-level distribution requires the Custom Dino Levels
+   ASA mod (CurseForge project/mod ID 928708) to be included in each server's
+   active mod list. Without that mod, the server remains at the normal vanilla
+   level distribution while still keeping the maximum wild level at 150.
+
+A wild-dino wipe is not required when only changing rates, stack sizes, photo
+mode range, admin logging, or tamed-dino per-level stats.
 
 To change the rates later, edit the values in this script and run it again.
 
