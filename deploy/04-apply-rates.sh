@@ -160,6 +160,8 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("ShowFloatingDamageText", "True"),
     ("AlwaysAllowStructurePickup", "True"),
     ("NonPermanentDiseases", "True"),
+    ("DinoCountMultiplier", "0.9"),
+    ("AutoSavePeriodMinutes", "30.0"),
 ])
 
 if session_name:
