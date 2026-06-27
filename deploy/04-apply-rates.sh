@@ -188,6 +188,9 @@ desired["ConfigurableCryopods"] = collections.OrderedDict([
 
 desired["CybersStructures"] = collections.OrderedDict([
     ("EnableEngramOverride", "True"),
+    ("HatcheryRangeInFoundations", "15"),
+    ("HatcheryScanInterval", "15"),
+    ("HatcherySlotCount", "100"),
 ])
 
 try:
