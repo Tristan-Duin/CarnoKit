@@ -330,6 +330,6 @@ with open(path, "w", encoding="utf-8") as fh:
 print(f"   updated {path}")
 PYEOF
 done
-s
+
 echo "==> Starting cluster"
 docker compose -p asa-cluster up -d
