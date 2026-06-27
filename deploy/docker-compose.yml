@@ -1,6 +1,6 @@
 # ARK: Survival Ascended - 3-map cluster
 #
-# Runs The Island, Scorched Earth and Extinction as clustered containers
+# Runs The Island, Scorched Earth and Ragnarok as clustered containers
 # using the maintained mschnitzer/asa-linux-server image (Windows server
 # binary via Proton). All tunables come from the sibling .env file.
 #
@@ -80,25 +80,25 @@ services:
     networks:
       - asa-network
 
-  asa-extinction:
+  asa-ragnarok:
     image: mschnitzer/asa-linux-server:latest
-    container_name: asa-extinction
-    hostname: asa-extinction
+    container_name: asa-ragnarok
+    hostname: asa-ragnarok
     entrypoint: "/usr/bin/start_server"
     user: gameserver
     tty: true
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=Extinction_WP?listen?Port=${EXTINCTION_GAME_PORT}?RCONPort=${EXTINCTION_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=Ragnarok_WP?listen?Port=${RAGNAROK_GAME_PORT}?RCONPort=${RAGNAROK_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
-      - "0.0.0.0:${EXTINCTION_GAME_PORT}:${EXTINCTION_GAME_PORT}/udp"
-      - "127.0.0.1:${EXTINCTION_RCON_PORT}:${EXTINCTION_RCON_PORT}/tcp"
+      - "0.0.0.0:${RAGNAROK_GAME_PORT}:${RAGNAROK_GAME_PORT}/udp"
+      - "127.0.0.1:${RAGNAROK_RCON_PORT}:${RAGNAROK_RCON_PORT}/tcp"
     volumes:
-      - ${BASE_DIR}/extinction/steam:/home/gameserver/Steam:rw
-      - ${BASE_DIR}/extinction/steamcmd:/home/gameserver/steamcmd:rw
-      - ${BASE_DIR}/extinction/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/ragnarok/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/ragnarok/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/ragnarok/server-files:/home/gameserver/server-files:rw
       - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
       - /etc/localtime:/etc/localtime:ro
     depends_on:

@@ -27,7 +27,7 @@ Thumbs.db
 # ASA per-map server data (saves, dinos, players) - VPS runtime only, never commit
 island/
 scorched/
-extinction/
+ragnarok/
 cluster-shared/
 
 # Secrets / local env (public repo - never commit)

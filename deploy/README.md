@@ -1,7 +1,7 @@
 # ARK: Survival Ascended - 3-Map Cluster on a VPS
 
 This repo deploys a clustered **ARK: Survival Ascended** server (The Island,
-Scorched Earth, Extinction) on an Ubuntu VPS using Docker, with the Discord
+Scorched Earth, Ragnarok) on an Ubuntu VPS using Docker, with the Discord
 bot, watchdog, crash analyzer, and auto-updater tooling.
 
 The ASA dedicated server is Windows-only; on Linux it runs inside the
@@ -30,7 +30,7 @@ Put this repo at `/opt/asa-cluster` so you have:
   bot/  watchdog/  crash_analyzer/
   deploy/               # the scripts below + docker-compose.yml + .env
   venv/                 # created by 03-setup-tooling.sh
-  island/  scorched/  extinction/   # per-map data (server-files, steam, steamcmd)
+  island/  scorched/  ragnarok/     # per-map data (server-files, steam, steamcmd)
   cluster-shared/       # cross-map transfers
 ```
 > The default base directory is `/opt/asa-cluster`. If you deploy elsewhere,
@@ -72,7 +72,7 @@ Put this repo at `/opt/asa-cluster` so you have:
 | ------------- | ---------- | -------------------------- |
 | The Island    | 7777       | 27020                      |
 | Scorched Earth| 7778       | 27021                      |
-| Extinction    | 7779       | 27022                      |
+| Ragnarok      | 7779       | 27022                      |
 
 Only the game UDP ports are opened to the internet (by `01-setup-vps.sh`).
 RCON is published on `127.0.0.1` only and used by the local tooling. ASA has
@@ -147,7 +147,7 @@ breeding, official wild level 150**, plus QoL and the mod settings:
   Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
   replaced by the CS versions so you don't get duplicates).
 - Server-list names: each map advertises as `Battling Poverty [Island]`,
-  `Battling Poverty [Scorched]` and `Battling Poverty [Extinction]` (the prefix
+  `Battling Poverty [Scorched]` and `Battling Poverty [Ragnarok]` (the prefix
   is `CLUSTER_NAME` in the script).
 Run it (idempotent - edit the values in the script and re-run anytime):
 ```bash

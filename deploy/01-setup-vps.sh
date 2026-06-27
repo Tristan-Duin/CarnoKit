@@ -79,7 +79,7 @@ ufw --force enable
 
 # ---------------------------------------------------------------------------
 log "Creating cluster data directories under ${BASE_DIR}"
-for srv in island scorched extinction; do
+for srv in island scorched ragnarok; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -88,7 +88,7 @@ mkdir -p "${BASE_DIR}/cluster-shared"
 
 # Own ONLY the data dirs as the in-container server user (not the tooling code).
 chown -R "${SERVER_UID}:${SERVER_GID}" \
-  "${BASE_DIR}/island" "${BASE_DIR}/scorched" "${BASE_DIR}/extinction" "${BASE_DIR}/cluster-shared"
+  "${BASE_DIR}/island" "${BASE_DIR}/scorched" "${BASE_DIR}/ragnarok" "${BASE_DIR}/cluster-shared"
 
 log "VPS setup complete."
 cat <<EOF
