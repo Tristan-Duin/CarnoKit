@@ -117,7 +117,7 @@ class PlayersCog(commands.GroupCog, group_name="players"):
         await interaction.response.defer()
         rcon = self.bot.rcon_for(server)  # type: ignore[attr-defined]
         await rcon.ensure_connected()
-        resp = await rcon.command(f'Broadcast "{text}"')
+        resp = await rcon.command(f'ServerChat "{text}"')
         await interaction.followup.send(
             embed=embeds.success("Broadcast Sent", resp or text)
         )
