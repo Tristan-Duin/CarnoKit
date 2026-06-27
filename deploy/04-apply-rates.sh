@@ -307,3 +307,29 @@ for section_name, desired_values in desired.items():
         if setting_match and setting_match.group(1) in drop:
             continue
 
+        if setting_match and setting_match.group(1) in remaining:
+            key = setting_match.group(1)
+            updated_body.append(f"{key}={remaining.pop(key)}")
+        else:
+            updated_body.append(line)
+
+    for key, value in remaining.items():
+        updated_body.append(f"{key}={value}")
+
+    sections[section_name] = updated_body
+
+output = list(preamble)
+
+for section_name in order:
+    output.append(f"[{section_name}]")
+    output.extend(sections[section_name])
+
+with open(path, "w", encoding="utf-8") as fh:
+    fh.write("\n".join(output).rstrip("\n") + "\n")
+
+print(f"   updated {path}")
+PYEOF
+done
+s
+echo "==> Starting cluster"
+docker compose -p asa-cluster up -d
