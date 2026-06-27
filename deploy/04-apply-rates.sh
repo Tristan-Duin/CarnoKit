@@ -41,6 +41,68 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+# ==============================================================================
+# SAFE SAVE SYSTEM
+# ==============================================================================
+ENV_FILE="${BASE_DIR}/deploy/.env"
+if [[ -f "${ENV_FILE}" ]]; then
+  echo "==> Sourcing cluster credentials from .env..."
+  # Safely parse required variables without evaluating the whole file
+  RCON_PASS=$(grep -E '^ADMIN_PASSWORD=' "${ENV_FILE}" | cut -d'=' -f2)
+else
+  echo "Error: Missing environment config file at ${ENV_FILE}" >&2
+  exit 1
+fi
+
+echo "==> Warning players and issuing safe-saves across the cluster..."
+
+for m in ${MAPS}; do
+  # Dynamically build and read the variable name from your .env file (e.g., ISLAND_RCON_PORT)
+  UPPER_MAP=$(echo "${m}" | tr '[:lower:]' '[:upper:]')
+  PORT_VAR="${UPPER_MAP}_RCON_PORT"
+  
+  port=$(grep -E "^${PORT_VAR}=" "${ENV_FILE}" | cut -d'=' -f2 || true)
+  
+  if [[ -n "${port}" && -n "${RCON_PASS}" ]]; then
+    echo "==> Sending save command to [${m}] on RCON port ${port}..."
+    
+    python3 - "${port}" "${RCON_PASS}" <<'RCONEOF'
+import sys
+import socket
+
+port = int(sys.argv[1])
+password = sys.argv[2]
+
+def send_rcon_cmd(cmd_str):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(4)
+        s.connect(('127.0.0.1', port))
+        
+        # Authenticate packet (Type 3)
+        auth_body = int.to_bytes(10, 4, 'little') + int.to_bytes(3, 4, 'little') + password.encode('utf-8') + b'\x00\x00'
+        s.sendall(int.to_bytes(len(auth_body), 4, 'little') + auth_body)
+        s.recv(4096)
+        
+        # Command packet (Type 2)
+        cmd_body = int.to_bytes(11, 4, 'little') + int.to_bytes(2, 4, 'little') + cmd_str.encode('utf-8') + b'\x00\x00'
+        s.sendall(int.to_bytes(len(cmd_body), 4, 'little') + cmd_body)
+        s.recv(4096)
+        s.close()
+    except Exception as e:
+        print(f"    [Warning] Could not reach port {port}: {e}")
+
+send_rcon_cmd("ServerChat Server updating! Saving world progress...")
+send_rcon_cmd("SaveWorld")
+RCONEOF
+  else
+    echo "    [Warning] Could not dynamically resolve RCON port for map: ${m}"
+  fi
+done
+
+echo "==> Waiting 15 seconds for game data disk writes to complete..."
+sleep 15
+
 echo "==> Stopping cluster"
 cd "${BASE_DIR}/deploy"
 docker compose -p asa-cluster down
@@ -245,87 +307,3 @@ for section_name, desired_values in desired.items():
         if setting_match and setting_match.group(1) in drop:
             continue
 
-        if setting_match and setting_match.group(1) in remaining:
-            key = setting_match.group(1)
-            updated_body.append(f"{key}={remaining.pop(key)}")
-        else:
-            updated_body.append(line)
-
-    for key, value in remaining.items():
-        updated_body.append(f"{key}={value}")
-
-    sections[section_name] = updated_body
-
-output = list(preamble)
-
-for section_name in order:
-    output.append(f"[{section_name}]")
-    output.extend(sections[section_name])
-
-with open(path, "w", encoding="utf-8") as fh:
-    fh.write("\n".join(output).rstrip("\n") + "\n")
-
-print(f"   updated {path}")
-PYEOF
-done
-
-echo "==> Starting cluster"
-docker compose -p asa-cluster up -d
-
-cat <<'NOTE'
-
-Rates + QoL + mod configs were applied to all maps, and the cluster is
-restarting.
-
-Current major rates and changes:
-  - XP:                         2x
-  - Harvest amount:             2x
-  - Taming speed:               5x (reduced from 8x)
-  - General stack size:         normal / 1x
-  - Raw Prime Meat stack:       5
-  - Raw Mutton stack:           5
-  - Giant Bee Honey stack:      5
-  - Egg hatch speed:            10x
-  - Baby maturation:            10x
-  - Mating cooldown:            0.1x normal
-  - Imprint:                    2x per cuddle
-  - Tamed dino weight/level:    2x
-  - Tamed dino stamina/level:   1.25x
-  - Tamed dino healing:         1.5x
-  - Dino stamina drain:         0.75x
-  - Player food/water drain:    0.5x
-  - Photo Mode range:           9000 (3x default)
-  - Admin commands in chat:     disabled
-  - CS Gravestone engram:       disabled/hidden
-  - Wild max level:             150
-  - Wild level distribution:    Ragnarok-like if Custom Dino Levels is loaded
-
-IMPORTANT — one-time actions:
-
-1. Remove existing Cybers Structures gravestones. Hiding the engram prevents
-   new ones from being crafted, but it does not automatically destroy ones
-   that are already placed. Run this once on each map through RCON or the
-   in-game admin console:
-
-     DestroyAll Gravestone_CS_C
-
-2. Wipe wild dinos once so the official level-150 setting, Shad's Critter
-   Reworks variants, and the Custom Dino Levels distribution can repopulate:
-
-     DestroyWildDinos
-
-   Or in Discord, run this once for each map:
-
-     /server destroy-wild-dinos
-
-3. The higher average wild-level distribution requires the Custom Dino Levels
-   ASA mod (CurseForge project/mod ID 928708) to be included in each server's
-   active mod list. Without that mod, the server remains at the normal vanilla
-   level distribution while still keeping the maximum wild level at 150.
-
-A wild-dino wipe is not required when only changing rates, stack sizes, photo
-mode range, admin logging, or tamed-dino per-level stats.
-
-To change the rates later, edit the values in this script and run it again.
-
-NOTE
