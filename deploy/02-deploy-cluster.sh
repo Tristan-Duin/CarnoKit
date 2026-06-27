@@ -24,7 +24,7 @@ set +a
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
 
 echo "==> Ensuring data directories under ${BASE_DIR}"
-for srv in island scorched extinction; do
+for srv in island scorched ragnarok; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -48,7 +48,7 @@ the server (~10-30 GB), Proton initialises, then the mods download. Expect
 Follow progress:
   docker logs -f asa-island
   docker logs -f asa-scorched
-  docker logs -f asa-extinction
+  docker logs -f asa-ragnarok
 
 Find the session name (once booted):
   docker exec asa-island cat server-files/ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini | grep SessionName

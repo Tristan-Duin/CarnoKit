@@ -12,7 +12,7 @@
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
-MAPS="island scorched extinction"
+MAPS="island scorched ragnarok"
 
 # Server-list name prefix; each map appends its label, e.g.
 # "Battling Poverty [Island]". Edit this to rename every server at once.
@@ -164,7 +164,7 @@ for m in ${MAPS}; do
   case "${m}" in
     island)     map_label="Island" ;;
     scorched)   map_label="Scorched" ;;
-    extinction) map_label="Extinction" ;;
+    ragnarok)   map_label="Ragnarok" ;;
     *)          map_label="${m}" ;;
   esac
 

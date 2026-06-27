@@ -62,7 +62,7 @@ log_file = /opt/asa-cluster/watchdog.log
 log_days = 30
 
 [servers]
-list = island,scorched,extinction
+list = island,scorched,ragnarok
 
 [server.island]
 name = The Island
@@ -80,10 +80,10 @@ rcon_port = 27021
 container = asa-scorched
 log_file = /opt/asa-cluster/scorched/server-files/ShooterGame/Saved/Logs/ShooterGame.log
 
-[server.extinction]
-name = Extinction
-map = Extinction_WP
+[server.ragnarok]
+name = Ragnarok
+map = Ragnarok_WP
 game_port = 7779
 rcon_port = 27022
-container = asa-extinction
-log_file = /opt/asa-cluster/extinction/server-files/ShooterGame/Saved/Logs/ShooterGame.log
+container = asa-ragnarok
+log_file = /opt/asa-cluster/ragnarok/server-files/ShooterGame/Saved/Logs/ShooterGame.log

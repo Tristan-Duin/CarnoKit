@@ -1,0 +1,7 @@
+sudo systemctl start asa-autoupdate.service
+
+sudo systemctl stop asa-watchdog
+
+sudo bash /opt/asa-cluster/deploy/04-apply-rates.sh
+
+sudo systemctl start asa-watchdog
