@@ -63,7 +63,6 @@ def server_status(
     embed.add_field(name="Status", value=status, inline=True)
     embed.add_field(name="Players", value=str(player_count), inline=True)
     embed.add_field(name="Map", value=map_name, inline=True)
-    embed.add_field(name="RCON", value=f"`{rcon_host}:{rcon_port}`", inline=True)
 
     if player_list.strip():
         players = parse_player_list(player_list)
@@ -201,7 +200,7 @@ def cluster_status(rows: List[dict]) -> discord.Embed:
         players = f"{r.get('players', 0)} players" if r.get("online") else "-"
         embed.add_field(
             name=r.get("name", "?"),
-            value=f"{state}\n`{r.get('map','')}`\nPort `{r.get('game_port','')}` - {players}",
+            value=f"{state}\n`{r.get('map','')}`\n{players}",
             inline=True,
         )
     embed.set_footer(text=_ts())
