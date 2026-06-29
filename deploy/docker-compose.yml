@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${ISLAND_GAME_PORT}:${ISLAND_GAME_PORT}/udp"
@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors s-NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${SCORCHED_GAME_PORT}:${SCORCHED_GAME_PORT}/udp"
@@ -90,7 +90,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=Ragnarok_WP?listen?Port=${RAGNAROK_GAME_PORT}?RCONPort=${RAGNAROK_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
+      - ASA_START_PARAMS=Ragnarok_WP?listen?Port=${RAGNAROK_GAME_PORT}?RCONPort=${RAGNAROK_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${RAGNAROK_GAME_PORT}:${RAGNAROK_GAME_PORT}/udp"
