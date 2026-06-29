@@ -13,9 +13,9 @@ from config import cfg
 
 class Tier(IntEnum):
     """Permission tiers, from lowest to highest."""
-    MOD = 1
-    ADMIN = 2
-    OWNER = 3
+    EVERYONE = 0
+    ADMIN = 1
+    OWNER = 2
 
 
 def _user_tier(interaction: discord.Interaction) -> Tier:
@@ -30,15 +30,13 @@ def _user_tier(interaction: discord.Interaction) -> Tier:
     if interaction.guild and interaction.guild.owner_id == user_id:
         return Tier.OWNER
 
-    # Role-based checks
+    # Role-based check
     if isinstance(interaction.user, discord.Member):
         role_ids = {r.id for r in interaction.user.roles}
         if role_ids & set(cfg.admin_roles):
             return Tier.ADMIN
-        if role_ids & set(cfg.mod_roles):
-            return Tier.MOD
 
-    return Tier.MOD  # default: moderator (lowest useful tier)
+    return Tier.EVERYONE  # default: no elevated permissions
 
 
 def require_tier(tier: Tier) -> Callable:
@@ -64,6 +62,5 @@ def require_tier(tier: Tier) -> Callable:
 
 
 # Convenience aliases
-require_mod = require_tier(Tier.MOD)
 require_admin = require_tier(Tier.ADMIN)
 require_owner = require_tier(Tier.OWNER)

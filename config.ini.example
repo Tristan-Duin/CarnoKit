@@ -34,10 +34,14 @@ token = YOUR_DISCORD_BOT_TOKEN
 
 # Comma-separated Discord role / user IDs.
 admin_role_ids =
-mod_role_ids =
 owner_user_ids =
 
-# Channel for cluster-wide alerts (joins/leaves/crashes/updates).
+# The single text channel the bot is locked to: all slash commands must be run
+# here, and the bot posts update notifications here. Enable Developer Mode in
+# Discord, right-click the channel -> Copy Channel ID. Blank = allow anywhere.
+channel_id =
+
+# Legacy fallback, only used for update posts when channel_id is blank.
 alerts_channel_id =
 
 [steamcmd]

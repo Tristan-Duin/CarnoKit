@@ -79,8 +79,8 @@ See `config.example.ini` for all available settings with descriptions.
 | `/players kick <player> [reason]` | Kick a player | Admin |
 | `/players ban <player> [reason]` | Ban a player | Admin |
 | `/players unban <id>` | Unban a player | Admin |
-| `/players message <player> <text>` | DM a player in-game | Mod |
-| `/players broadcast <text>` | Server-wide broadcast | Mod |
+| `/players message <player> <text>` | DM a player in-game | Admin |
+| `/players broadcast <text>` | Server-wide broadcast | Admin |
 
 ### Admin
 | Command | Description | Permission |
@@ -115,8 +115,8 @@ See `config.example.ini` for all available settings with descriptions.
 ### Logs
 | Command | Description | Permission |
 |---|---|---|
-| `/logs tail [lines]` | Show last N log lines | Mod |
-| `/logs search <query>` | Search server logs | Mod |
+| `/logs tail [lines]` | Show last N log lines | Admin |
+| `/logs search <query>` | Search server logs | Admin |
 
 ## Watchdog
 
@@ -159,7 +159,6 @@ Set Discord role/user IDs in `config.ini` under `[discord]`:
 | Tier | Access | Config key |
 |---|---|---|
 | **Owner** | All commands including raw RCON | `owner_user_ids` |
-| **Admin** | Server management, kicks, bans, admin cheats | `admin_role_ids` |
-| **Mod** | Broadcasts, messaging, log viewing | `mod_role_ids` |
+| **Admin** | Server management, kicks, bans, cheats, broadcasts, messaging, logs | `admin_role_ids` |
 
 The Discord server owner automatically gets Owner tier.

@@ -79,9 +79,11 @@ class Settings:
         # [discord]
         self.discord_token = cp.get("discord", "token", fallback="")
         self._admin_role_ids = cp.get("discord", "admin_role_ids", fallback="")
-        self._mod_role_ids = cp.get("discord", "mod_role_ids", fallback="")
         self._owner_user_ids = cp.get("discord", "owner_user_ids", fallback="")
         self.alerts_channel_id = _opt_int(cp.get("discord", "alerts_channel_id", fallback=""))
+        # Single text channel the bot is locked to (slash commands + posts).
+        # Falls back to alerts_channel_id when unset for backward compatibility.
+        self.channel_id = _opt_int(cp.get("discord", "channel_id", fallback="")) or self.alerts_channel_id
 
         # [steamcmd]
         self.asa_app_id = cp.get("steamcmd", "asa_app_id", fallback="2430930")
@@ -114,10 +116,6 @@ class Settings:
     @property
     def admin_roles(self) -> List[int]:
         return _split_ids(self._admin_role_ids)
-
-    @property
-    def mod_roles(self) -> List[int]:
-        return _split_ids(self._mod_role_ids)
 
     @property
     def owner_users(self) -> List[int]:

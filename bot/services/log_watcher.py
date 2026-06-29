@@ -1,33 +1,23 @@
-"""Watches one server's ShooterGame.log for player/server events and posts alerts."""
+"""Tails one server's ShooterGame.log into an in-memory buffer for /logs."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from collections import deque
 from typing import Deque, List, Optional
 
 import discord
 
-from config import ServerConfig, cfg
-from utils import embeds
+from config import ServerConfig
 
 log = logging.getLogger(__name__)
-
-# Event patterns (case-insensitive)
-_PATTERNS = [
-    ("join",  re.compile(r"(?P<name>.+?) (?:joined|connected)", re.I)),
-    ("leave", re.compile(r"(?P<name>.+?) (?:left|disconnected)", re.I)),
-    ("death", re.compile(r"(?P<name>.+?) was killed", re.I)),
-    ("death", re.compile(r"(?P<name>.+?) (?:starved|drowned|froze)", re.I)),
-]
 
 _MAX_HISTORY = 2000  # lines kept in memory for /logs tail
 
 
 class LogWatcher:
-    """Tails one ARK server log file and detects notable events."""
+    """Tails one ARK server log file into a rolling in-memory buffer."""
 
     def __init__(self, bot: discord.Client, server: ServerConfig):
         self.bot = bot
@@ -110,30 +100,3 @@ class LogWatcher:
         new_lines = [l for l in data.splitlines() if l.strip()]
         for line in new_lines:
             self._history.append(line)
-            await self._check_events(line)
-
-    async def _check_events(self, line: str) -> None:
-        channel = self._alerts_channel
-        if channel is None:
-            return
-
-        for event_type, pattern in _PATTERNS:
-            m = pattern.search(line)
-            if m:
-                name = m.group("name").strip()
-                embed = embeds.player_event(
-                    event_type, name, detail=line.strip(), server=self.server.name
-                )
-                try:
-                    await channel.send(embed=embed)
-                except Exception as exc:
-                    log.warning("Failed to send alert: %s", exc)
-                break  # one event per line
-
-    @property
-    def _alerts_channel(self) -> Optional[discord.TextChannel]:
-        if cfg.alerts_channel_id:
-            ch = self.bot.get_channel(cfg.alerts_channel_id)
-            if isinstance(ch, discord.TextChannel):
-                return ch
-        return None
