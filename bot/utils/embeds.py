@@ -178,21 +178,6 @@ def log_tail(lines: List[str], title: str = "Server Logs") -> discord.Embed:
     return embed
 
 
-# ── Alerts ────────────────────────────────────────────────────────────────────
-
-def player_event(event_type: str, player_name: str, detail: str = "", server: str = "") -> discord.Embed:
-    title = f"Player {event_type.title()}"
-    if server:
-        title = f"[{server}] {title}"
-    embed = discord.Embed(
-        title=title,
-        description=f"**{player_name}**" + (f"\n{detail}" if detail else ""),
-        color=COLOR_INFO if event_type == "join" else COLOR_WARN,
-    )
-    embed.set_footer(text=_ts())
-    return embed
-
-
 # ── Cluster ─────────────────────────────────────────────────────
 
 def cluster_status(rows: List[dict]) -> discord.Embed:

@@ -203,8 +203,8 @@ class UpdateChecker:
             await asyncio.sleep(15)  # stagger to avoid disk/CPU saturation
 
     async def _post_alert(self, embed: discord.Embed) -> None:
-        if cfg.alerts_channel_id:
-            ch = self.bot.get_channel(cfg.alerts_channel_id)
+        if cfg.channel_id:
+            ch = self.bot.get_channel(cfg.channel_id)
             if isinstance(ch, discord.TextChannel):
                 try:
                     await ch.send(embed=embed)

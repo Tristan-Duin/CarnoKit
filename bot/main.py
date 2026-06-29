@@ -38,12 +38,25 @@ EXTENSIONS = [
 ]
 
 
+class ArkCommandTree(discord.app_commands.CommandTree):
+    """Restrict every slash command to the single configured bot channel."""
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        channel_id = cfg.channel_id
+        if channel_id and interaction.channel_id != channel_id:
+            await interaction.response.send_message(
+                f"The bot only responds in <#{channel_id}>.", ephemeral=True
+            )
+            return False
+        return True
+
+
 class ArkBot(commands.Bot):
     """The main bot class.  Holds one RCON client + log watcher per server."""
 
     def __init__(self) -> None:
         intents = discord.Intents.default()
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=intents, tree_cls=ArkCommandTree)
 
         # One shared RCON client per server (created once, used by all cogs).
         self.rcons: dict[str, RconClient] = {
@@ -89,6 +102,9 @@ class ArkBot(commands.Bot):
         async def on_app_command_error(
             interaction: discord.Interaction, error: discord.app_commands.AppCommandError
         ):
+            # interaction_check already told the user to use the bot channel.
+            if isinstance(error, discord.app_commands.CheckFailure):
+                return
             original = getattr(error, "original", error)
             msg = f"Command failed: {original}"
             log.warning("Slash command error: %s", original)

@@ -10,7 +10,7 @@ from discord.ext import commands
 
 from config import cfg, server_choices
 from utils import embeds
-from utils.permissions import require_mod
+from utils.permissions import require_admin
 
 
 class LogsCog(commands.GroupCog, group_name="logs"):
@@ -36,7 +36,7 @@ class LogsCog(commands.GroupCog, group_name="logs"):
     @app_commands.command(name="tail", description="Show the last N lines of a server log")
     @app_commands.describe(lines="Number of lines to show (default 25, max 100)", server="Target map (default: first)")
     @app_commands.choices(server=server_choices())
-    @require_mod
+    @require_admin
     async def tail(self, interaction: discord.Interaction, lines: int = 25, server: Optional[str] = None):
         lines = max(1, min(lines, 100))
         sc = cfg.server(server)
@@ -49,7 +49,7 @@ class LogsCog(commands.GroupCog, group_name="logs"):
     @app_commands.command(name="search", description="Search a server's log buffer for a keyword")
     @app_commands.describe(query="Search term (case-insensitive)", server="Target map (default: first)")
     @app_commands.choices(server=server_choices())
-    @require_mod
+    @require_admin
     async def search(self, interaction: discord.Interaction, query: str, server: Optional[str] = None):
         sc = cfg.server(server)
         results = self._watcher(server).search(query)

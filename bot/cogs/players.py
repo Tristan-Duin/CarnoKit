@@ -10,7 +10,7 @@ from discord.ext import commands
 
 from config import server_choices
 from utils import embeds
-from utils.permissions import require_admin, require_mod
+from utils.permissions import require_admin
 
 
 class PlayersCog(commands.GroupCog, group_name="players"):
@@ -96,7 +96,7 @@ class PlayersCog(commands.GroupCog, group_name="players"):
     @app_commands.command(name="message", description="Send a private in-game message to a player")
     @app_commands.describe(player="Player name or ID", text="Message to send", server="Target map (default: first)")
     @app_commands.choices(server=server_choices())
-    @require_mod
+    @require_admin
     async def message(self, interaction: discord.Interaction, player: str, text: str, server: Optional[str] = None):
         await interaction.response.defer(ephemeral=True)
         rcon = self.bot.rcon_for(server)  # type: ignore[attr-defined]
@@ -112,7 +112,7 @@ class PlayersCog(commands.GroupCog, group_name="players"):
     @app_commands.command(name="broadcast", description="Send a server-wide broadcast message")
     @app_commands.describe(text="Message to broadcast to all players", server="Target map (default: first)")
     @app_commands.choices(server=server_choices())
-    @require_mod
+    @require_admin
     async def broadcast(self, interaction: discord.Interaction, text: str, server: Optional[str] = None):
         await interaction.response.defer()
         rcon = self.bot.rcon_for(server)  # type: ignore[attr-defined]
