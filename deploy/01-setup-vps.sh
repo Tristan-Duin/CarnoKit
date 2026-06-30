@@ -73,13 +73,13 @@ fi
 log "Configuring firewall (ufw)"
 # Allow SSH first so we don't lock ourselves out, then the game ports.
 ufw allow OpenSSH >/dev/null 2>&1 || ufw allow 22/tcp >/dev/null 2>&1 || true
-ufw allow 7777:7779/udp >/dev/null 2>&1 || true
+ufw allow 7777:7780/udp >/dev/null 2>&1 || true
 # RCON (27020-27022) is intentionally NOT opened; it is bound to localhost.
 ufw --force enable
 
 # ---------------------------------------------------------------------------
 log "Creating cluster data directories under ${BASE_DIR}"
-for srv in island scorched ragnarok; do
+for srv in island scorched ragnarok lostcolony; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -88,7 +88,11 @@ mkdir -p "${BASE_DIR}/cluster-shared"
 
 # Own ONLY the data dirs as the in-container server user (not the tooling code).
 chown -R "${SERVER_UID}:${SERVER_GID}" \
-  "${BASE_DIR}/island" "${BASE_DIR}/scorched" "${BASE_DIR}/ragnarok" "${BASE_DIR}/cluster-shared"
+  "${BASE_DIR}/island" \
+  "${BASE_DIR}/scorched" \
+  "${BASE_DIR}/ragnarok" \
+  "${BASE_DIR}/lostcolony" \
+  "${BASE_DIR}/cluster-shared"
 
 log "VPS setup complete."
 cat <<EOF

@@ -28,6 +28,7 @@ Thumbs.db
 island/
 scorched/
 ragnarok/
+lostcolony/
 cluster-shared/
 
 # Secrets / local env (public repo - never commit)
