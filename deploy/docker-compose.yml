@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors s-NoBattlEye
+      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${SCORCHED_GAME_PORT}:${SCORCHED_GAME_PORT}/udp"
@@ -104,6 +104,38 @@ services:
     depends_on:
       asa-permissions:
         condition: service_completed_successfully
+    networks:
+      - asa-network
+
+  asa-lostcolony:
+    image: mschnitzer/asa-linux-server:latest
+    container_name: asa-lostcolony
+    hostname: asa-lostcolony
+    entrypoint: "/usr/bin/start_server"
+    user: gameserver
+    tty: true
+    restart: unless-stopped
+    stop_grace_period: 90s
+
+    environment:
+      - ASA_START_PARAMS=LostColony_WP?listen?Port=${LOSTCOLONY_GAME_PORT}?RCONPort=${LOSTCOLONY_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ENABLE_DEBUG=0
+
+    ports:
+      - "0.0.0.0:${LOSTCOLONY_GAME_PORT}:${LOSTCOLONY_GAME_PORT}/udp"
+      - "127.0.0.1:${LOSTCOLONY_RCON_PORT}:${LOSTCOLONY_RCON_PORT}/tcp"
+
+    volumes:
+      - ${BASE_DIR}/lostcolony/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/lostcolony/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/lostcolony/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
+      - /etc/localtime:/etc/localtime:ro
+
+    depends_on:
+      asa-permissions:
+        condition: service_completed_successfully
+
     networks:
       - asa-network
 
