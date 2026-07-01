@@ -17,8 +17,7 @@ cluster_id = arkcluster01
 # CurseForge mod IDs installed on every map:
 #   940975 = Cybers Structures QoL+ (Crossplay)
 #   929169 = Configurable Cryopods
-#   928548 = Shiny! Dinos Ascended
-mods = 940975,929169,928548
+mods = 940975,929169
 
 # RCON + admin password (must match deploy/.env ADMIN_PASSWORD). CHANGE THIS.
 admin_password = CHANGE_ME

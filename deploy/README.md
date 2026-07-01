@@ -10,7 +10,7 @@ maintained `mschnitzer/asa-linux-server` image via Proton.
 ## What you get
 - 4 clustered maps sharing characters/dinos (one `cluster-shared` volume).
 - Mods on every map: Cybers Structures QoL+ (`940975`), Configurable
-  Cryopods (`929169`), Shiny! Dinos Ascended (`928548`)
+  Cryopods (`929169`)
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
   `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.
@@ -146,8 +146,7 @@ breeding, official wild level 150**, plus QoL and the mod settings:
 - PvE: structure/dino decay off, flyer carry, cave building, cluster transfers enabled.
 - Mods: Configurable Cryopods tuned (no cryo sickness, cryo rifle, etc.) and
   Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
-  replaced by the CS versions so you don't get duplicates). Shiny! Dinos
-  Ascended has elemental/effect variants blacklisted under `[Shiny]`.
+  replaced by the CS versions so you don't get duplicates).
 - Server-list names: each map advertises as `Battling Poverty [Island]`,
   `Battling Poverty [Scorched]`, `Battling Poverty [Valguero]`, and
   `Battling Poverty [Lost Colony]` (the prefix is `CLUSTER_NAME` in the script).
