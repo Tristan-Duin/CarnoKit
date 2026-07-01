@@ -276,11 +276,6 @@ desired["CybersStructures"] = collections.OrderedDict([
     ("HatcherySlotCount", "100"),
 ])
 
-desired["Shiny"] = collections.OrderedDict([
-    ("VariantBlacklist", "Burning,Frozen,Spectral,Taser,Radioactive,Nightmare,Crystalline"),
-    ("SubVariantWeightOverrides", "Burning:0,Frozen:0,Spectral:0,Taser:0,Radioactive:0,Nightmare:0,Crystalline:0"),
-])
-
 try:
     with open(path, "r", encoding="utf-8", errors="replace") as fh:
         lines = fh.read().splitlines()
