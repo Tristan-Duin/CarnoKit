@@ -79,7 +79,7 @@ ufw --force enable
 
 # ---------------------------------------------------------------------------
 log "Creating cluster data directories under ${BASE_DIR}"
-for srv in island scorched ragnarok lostcolony; do
+for srv in island scorched valguero lostcolony; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -90,7 +90,7 @@ mkdir -p "${BASE_DIR}/cluster-shared"
 chown -R "${SERVER_UID}:${SERVER_GID}" \
   "${BASE_DIR}/island" \
   "${BASE_DIR}/scorched" \
-  "${BASE_DIR}/ragnarok" \
+  "${BASE_DIR}/valguero" \
   "${BASE_DIR}/lostcolony" \
   "${BASE_DIR}/cluster-shared"
 

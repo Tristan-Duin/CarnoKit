@@ -1,16 +1,16 @@
-# ARK: Survival Ascended - 3-Map Cluster on a VPS
+# ARK: Survival Ascended - 4-Map Cluster on a VPS
 
 This repo deploys a clustered **ARK: Survival Ascended** server (The Island,
-Scorched Earth, Ragnarok) on an Ubuntu VPS using Docker, with the Discord
-bot, watchdog, crash analyzer, and auto-updater tooling.
+Scorched Earth, Valguero, Lost Colony) on an Ubuntu VPS using Docker, with the
+Discord bot, watchdog, crash analyzer, and auto-updater tooling.
 
 The ASA dedicated server is Windows-only; on Linux it runs inside the
 maintained `mschnitzer/asa-linux-server` image via Proton.
 
 ## What you get
-- 3 clustered maps sharing characters/dinos (one `cluster-shared` volume).
+- 4 clustered maps sharing characters/dinos (one `cluster-shared` volume).
 - Mods on every map: Cybers Structures QoL+ (`940975`), Configurable
-  Cryopods (`929169`)
+  Cryopods (`929169`), Shiny! Dinos Ascended (`928548`)
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
   `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.
@@ -30,7 +30,7 @@ Put this repo at `/opt/asa-cluster` so you have:
   bot/  watchdog/  crash_analyzer/
   deploy/               # the scripts below + docker-compose.yml + .env
   venv/                 # created by 03-setup-tooling.sh
-  island/  scorched/  ragnarok/     # per-map data (server-files, steam, steamcmd)
+  island/  scorched/  valguero/  lostcolony/  # per-map data
   cluster-shared/       # cross-map transfers
 ```
 > The default base directory is `/opt/asa-cluster`. If you deploy elsewhere,
@@ -72,7 +72,8 @@ Put this repo at `/opt/asa-cluster` so you have:
 | ------------- | ---------- | -------------------------- |
 | The Island    | 7777       | 27020                      |
 | Scorched Earth| 7778       | 27021                      |
-| Ragnarok      | 7779       | 27022                      |
+| Valguero      | 7779       | 27022                      |
+| Lost Colony   | 7780       | 27023                      |
 
 Only the game UDP ports are opened to the internet (by `01-setup-vps.sh`).
 RCON is published on `127.0.0.1` only and used by the local tooling. ASA has
@@ -145,10 +146,11 @@ breeding, official wild level 150**, plus QoL and the mod settings:
 - PvE: structure/dino decay off, flyer carry, cave building, cluster transfers enabled.
 - Mods: Configurable Cryopods tuned (no cryo sickness, cryo rifle, etc.) and
   Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
-  replaced by the CS versions so you don't get duplicates).
+  replaced by the CS versions so you don't get duplicates). Shiny! Dinos
+  Ascended has elemental/effect variants blacklisted under `[Shiny]`.
 - Server-list names: each map advertises as `Battling Poverty [Island]`,
-  `Battling Poverty [Scorched]` and `Battling Poverty [Ragnarok]` (the prefix
-  is `CLUSTER_NAME` in the script).
+  `Battling Poverty [Scorched]`, `Battling Poverty [Valguero]`, and
+  `Battling Poverty [Lost Colony]` (the prefix is `CLUSTER_NAME` in the script).
 Run it (idempotent - edit the values in the script and re-run anytime):
 ```bash
 sudo bash /opt/asa-cluster/deploy/04-apply-rates.sh

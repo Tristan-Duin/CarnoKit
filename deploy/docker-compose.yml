@@ -1,13 +1,13 @@
-# ARK: Survival Ascended - 3-map cluster
+# ARK: Survival Ascended - 4-map cluster
 #
-# Runs The Island, Scorched Earth and Ragnarok as clustered containers
+# Runs The Island, Scorched Earth, Valguero and Lost Colony as clustered containers
 # using the maintained mschnitzer/asa-linux-server image (Windows server
 # binary via Proton). All tunables come from the sibling .env file.
 #
 # Start with:   docker compose -p asa-cluster up -d   (see 02-deploy-cluster.sh)
 #
 # Ports: game ports are published on all interfaces (players connect to
-# UDP 7777-7779). RCON is published ONLY on 127.0.0.1 so the bot/watchdog
+# UDP 7777-7780). RCON is published ONLY on 127.0.0.1 so the bot/watchdog
 # can reach it locally - it is never exposed to the internet.
 #
 # NOTE: ServerAdminPassword is intentionally the LAST ?option. ARK reads a
@@ -80,25 +80,25 @@ services:
     networks:
       - asa-network
 
-  asa-ragnarok:
+  asa-valguero:
     image: mschnitzer/asa-linux-server:latest
-    container_name: asa-ragnarok
-    hostname: asa-ragnarok
+    container_name: asa-valguero
+    hostname: asa-valguero
     entrypoint: "/usr/bin/start_server"
     user: gameserver
     tty: true
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=Ragnarok_WP?listen?Port=${RAGNAROK_GAME_PORT}?RCONPort=${RAGNAROK_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ASA_START_PARAMS=Valguero_WP?listen?Port=${VALGUERO_GAME_PORT}?RCONPort=${VALGUERO_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
-      - "0.0.0.0:${RAGNAROK_GAME_PORT}:${RAGNAROK_GAME_PORT}/udp"
-      - "127.0.0.1:${RAGNAROK_RCON_PORT}:${RAGNAROK_RCON_PORT}/tcp"
+      - "0.0.0.0:${VALGUERO_GAME_PORT}:${VALGUERO_GAME_PORT}/udp"
+      - "127.0.0.1:${VALGUERO_RCON_PORT}:${VALGUERO_RCON_PORT}/tcp"
     volumes:
-      - ${BASE_DIR}/ragnarok/steam:/home/gameserver/Steam:rw
-      - ${BASE_DIR}/ragnarok/steamcmd:/home/gameserver/steamcmd:rw
-      - ${BASE_DIR}/ragnarok/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/valguero/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/valguero/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/valguero/server-files:/home/gameserver/server-files:rw
       - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
       - /etc/localtime:/etc/localtime:ro
     depends_on:
