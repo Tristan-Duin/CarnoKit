@@ -117,7 +117,7 @@ RCONEOF
   fi
 done
 
-echo "==> Waiting 15 seconds for game data disk writes to complete..."
+echo "==> Waiting 30 seconds for game data disk writes to complete..."
 sleep 30
 
 echo "==> Stopping cluster"
