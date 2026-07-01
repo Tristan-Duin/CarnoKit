@@ -83,6 +83,7 @@ for srv in island scorched valguero lostcolony; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
+  mkdir -p "${BASE_DIR}/${srv}/steam/compatibilitytools.d"
 done
 mkdir -p "${BASE_DIR}/cluster-shared"
 
@@ -100,8 +101,8 @@ cat <<EOF
 Next steps:
   1. Put this repo at ${BASE_DIR} (so you have ${BASE_DIR}/deploy, ${BASE_DIR}/bot, ...).
   2. cd ${BASE_DIR}/deploy && cp .env.example .env  then edit .env (passwords!).
-  3. bash 02-deploy-cluster.sh        # download + launch the 3 servers
+  3. bash 02-deploy-cluster.sh        # download + launch the 4 servers
   4. bash 03-setup-tooling.sh         # install + start the Discord bot + watchdog
 
-Reminder: ensure the VPS has >=100 GB free disk (3 separate server installs).
+Reminder: ensure the VPS has >=130 GB free disk (4 separate server installs).
 EOF

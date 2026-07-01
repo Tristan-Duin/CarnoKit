@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 02-deploy-cluster.sh - Download and launch the 3-map ASA cluster.
+# 02-deploy-cluster.sh - Download and launch the 4-map ASA cluster.
 #
 # Run from the deploy directory (after editing .env):
 #   bash deploy/02-deploy-cluster.sh
@@ -22,14 +22,30 @@ set -a
 source ./.env
 set +a
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
+SERVER_UID=25000
+SERVER_GID=25000
 
 echo "==> Ensuring data directories under ${BASE_DIR}"
 for srv in island scorched valguero lostcolony; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
+  mkdir -p "${BASE_DIR}/${srv}/steam/compatibilitytools.d"
 done
 mkdir -p "${BASE_DIR}/cluster-shared"
+
+if [[ "${EUID}" -eq 0 ]]; then
+  echo "==> Fixing data directory ownership for the in-container gameserver user"
+  chown -R "${SERVER_UID}:${SERVER_GID}" \
+    "${BASE_DIR}/island" \
+    "${BASE_DIR}/scorched" \
+    "${BASE_DIR}/valguero" \
+    "${BASE_DIR}/lostcolony" \
+    "${BASE_DIR}/cluster-shared"
+else
+  echo "==> Not running as root; skipping ownership repair."
+  echo "    If containers log Permission denied, run this script with sudo."
+fi
 
 if ! docker info >/dev/null 2>&1; then
   echo "Cannot talk to Docker. Run this as root (sudo) or add your user to the 'docker' group." >&2
