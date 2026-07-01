@@ -13,6 +13,8 @@ set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
 MAPS="island scorched valguero lostcolony"
+SERVER_UID=25000
+SERVER_GID=25000
 
 # Server-list name prefix; each map appends its label, e.g.
 # "Battling Poverty [Island]". Edit this to rename every server at once.
@@ -40,6 +42,21 @@ if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 was not found in PATH." >&2
   exit 1
 fi
+
+repair_data_permissions() {
+  echo "==> Repairing cluster data directory permissions"
+
+  for m in ${MAPS}; do
+    for sub in server-files steam steamcmd; do
+      mkdir -p "${BASE_DIR}/${m}/${sub}"
+    done
+    mkdir -p "${BASE_DIR}/${m}/steam/compatibilitytools.d"
+    chown -R "${SERVER_UID}:${SERVER_GID}" "${BASE_DIR}/${m}"
+  done
+
+  mkdir -p "${BASE_DIR}/cluster-shared"
+  chown -R "${SERVER_UID}:${SERVER_GID}" "${BASE_DIR}/cluster-shared"
+}
 
 # ==============================================================================
 # SAFE SAVE SYSTEM
@@ -101,11 +118,13 @@ RCONEOF
 done
 
 echo "==> Waiting 15 seconds for game data disk writes to complete..."
-sleep 15
+sleep 30
 
 echo "==> Stopping cluster"
 cd "${BASE_DIR}/deploy"
 docker compose -p asa-cluster down
+
+repair_data_permissions
 
 # --- Game.ini: breeding, stats, QoL, photo mode, and item overrides ---
 # These settings are identical on every map.
@@ -338,5 +357,8 @@ print(f"   updated {path}")
 PYEOF
 done
 
+repair_data_permissions
+
 echo "==> Starting cluster"
+docker compose -p asa-cluster up -d --force-recreate asa-permissions
 docker compose -p asa-cluster up -d

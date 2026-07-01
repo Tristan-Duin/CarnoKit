@@ -20,7 +20,17 @@ services:
   # in-container server user (uid/gid 25000). Runs before the servers.
   asa-permissions:
     image: alpine:3
-    command: ["sh", "-c", "chown -R 25000:25000 /data"]
+    command:
+      - sh
+      - -c
+      - |
+        set -eu
+        for srv in island scorched valguero lostcolony; do
+          mkdir -p "/data/$${srv}/server-files" "/data/$${srv}/steam/compatibilitytools.d" "/data/$${srv}/steamcmd"
+          chown -R 25000:25000 "/data/$${srv}"
+        done
+        mkdir -p /data/cluster-shared
+        chown -R 25000:25000 /data/cluster-shared
     user: root
     volumes:
       - ${BASE_DIR}:/data
