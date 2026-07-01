@@ -5,7 +5,7 @@
 # the asa-autoupdate.timer.
 #
 # DATA SAFETY: this only updates tracked code via `git reset --hard`. The
-# per-map server data (island/ scorched/ ragnarok/ cluster-shared/),
+# per-map server data (island/ scorched/ valguero/ cluster-shared/),
 # config.ini and venv/ are untracked/ignored and are never modified here.
 # This script NEVER runs `git clean`. It also never restarts the ARK game
 # containers or runs 04-apply-rates.sh - only the tooling services.

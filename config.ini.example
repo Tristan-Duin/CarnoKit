@@ -16,8 +16,9 @@ cluster_id = arkcluster01
 
 # CurseForge mod IDs installed on every map:
 #   940975 = Cybers Structures QoL+ (Crossplay)
-#   929169 = Configurable Cryopod
-mods = 940975,929169
+#   929169 = Configurable Cryopods
+#   928548 = Shiny! Dinos Ascended
+mods = 940975,929169,928548
 
 # RCON + admin password (must match deploy/.env ADMIN_PASSWORD). CHANGE THIS.
 admin_password = CHANGE_ME
@@ -66,7 +67,7 @@ log_file = /opt/asa-cluster/watchdog.log
 log_days = 30
 
 [servers]
-list = island,scorched,ragnarok,lostcolony
+list = island,scorched,valguero,lostcolony
 
 [server.island]
 name = The Island
@@ -84,13 +85,13 @@ rcon_port = 27021
 container = asa-scorched
 log_file = /opt/asa-cluster/scorched/server-files/ShooterGame/Saved/Logs/ShooterGame.log
 
-[server.ragnarok]
-name = Ragnarok
-map = Ragnarok_WP
+[server.valguero]
+name = Valguero
+map = Valguero_WP
 game_port = 7779
 rcon_port = 27022
-container = asa-ragnarok
-log_file = /opt/asa-cluster/ragnarok/server-files/ShooterGame/Saved/Logs/ShooterGame.log
+container = asa-valguero
+log_file = /opt/asa-cluster/valguero/server-files/ShooterGame/Saved/Logs/ShooterGame.log
 
 [server.lostcolony]
 name = Lost Colony

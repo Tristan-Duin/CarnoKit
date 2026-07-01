@@ -12,7 +12,7 @@
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
-MAPS="island scorched ragnarok lostcolony"
+MAPS="island scorched valguero lostcolony"
 
 # Server-list name prefix; each map appends its label, e.g.
 # "Battling Poverty [Island]". Edit this to rename every server at once.
@@ -115,7 +115,7 @@ MatingIntervalMultiplier=0.01
 MatingSpeedMultiplier=2.0
 EggHatchSpeedMultiplier=20.0
 LayEggIntervalMultiplier=0.5
-BabyMatureSpeedMultiplier=90.0
+BabyMatureSpeedMultiplier=80.0
 BabyFoodConsumptionSpeedMultiplier=1.0
 BabyCuddleIntervalMultiplier=0.01
 BabyCuddleGracePeriodMultiplier=3.0
@@ -164,7 +164,7 @@ for m in ${MAPS}; do
   case "${m}" in
     island)       map_label="Island" ;;
     scorched)     map_label="Scorched" ;;
-    ragnarok)     map_label="Ragnarok" ;;
+    valguero)     map_label="Valguero" ;;
     lostcolony)   map_label="Lost Colony" ;;
     *)            map_label="${m}" ;;
   esac
@@ -189,7 +189,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("EnableCryoSicknessPVE", "False"),
     ("HarvestAmountMultiplier", "2.0"),
     ("HarvestHealthMultiplier", "1.0"),
-    ("TamingSpeedMultiplier", "6.5"),
+    ("TamingSpeedMultiplier", "5.5"),
     ("DinoCharacterHealthRecoveryMultiplier", "1.5"),
     ("DinoCharacterStaminaDrainMultiplier", "0.75"),
     ("PlayerCharacterFoodDrainMultiplier", "0.5"),
@@ -225,6 +225,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("NonPermanentDiseases", "True"),
     ("DinoCountMultiplier", "0.9"),
     ("AutoSavePeriodMinutes", "30.0"),
+    ("ResourceNoReplenishRadiusStructures", "0.5"),
 ])
 
 if session_name:
@@ -254,6 +255,11 @@ desired["CybersStructures"] = collections.OrderedDict([
     ("HatcheryRangeInFoundations", "15"),
     ("HatcheryScanInterval", "15"),
     ("HatcherySlotCount", "100"),
+])
+
+desired["Shiny"] = collections.OrderedDict([
+    ("VariantBlacklist", "Burning,Frozen,Spectral,Taser,Radioactive,Nightmare,Crystalline"),
+    ("SubVariantWeightOverrides", "Burning:0,Frozen:0,Spectral:0,Taser:0,Radioactive:0,Nightmare:0,Crystalline:0"),
 ])
 
 try:
