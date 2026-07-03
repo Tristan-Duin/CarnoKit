@@ -111,19 +111,17 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
 
     # ── /schedule restart ─────────────────────────────────────────────────
 
-    @app_commands.command(name="restart", description="Schedule a recurring server restart (cron syntax)")
-    @app_commands.describe(cron="Cron expression, e.g. '0 4 * * *' for daily at 4 AM", server="Target map (omit = whole cluster)")
-    @app_commands.choices(server=server_choices())
+    @app_commands.command(name="restart", description="Schedule a recurring whole-cluster restart (cron syntax)")
+    @app_commands.describe(cron="Cron expression, e.g. '0 4 * * *' for daily at 4 AM")
     @require_admin
-    async def restart(self, interaction: discord.Interaction, cron: str, server: Optional[str] = None):
+    async def restart(self, interaction: discord.Interaction, cron: str):
         if not croniter.is_valid(cron):
             return await interaction.response.send_message(
                 embed=embeds.error("Invalid Cron", f"`{cron}` is not a valid cron expression.")
             )
 
-        key = cfg.server(server).key if server else ""
         sid = str(uuid.uuid4())[:8]
-        sched = _Schedule(id=sid, type="restart", cron=cron, server=key)
+        sched = _Schedule(id=sid, type="restart", cron=cron, server="")
         self._schedules[sid] = sched
         sched.task = asyncio.create_task(self._cron_restart_loop(sched))
         self._save_state()
@@ -132,7 +130,7 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
         await interaction.response.send_message(
             embed=embeds.success(
                 "Restart Scheduled",
-                f"ID: `{sid}`\nTarget: {self._target_label(key)}\nCron: `{cron}`\n"
+                f"ID: `{sid}`\nTarget: the whole cluster\nCron: `{cron}`\n"
                 f"Next run: {nxt.strftime('%Y-%m-%d %H:%M')}",
             )
         )
@@ -172,8 +170,9 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
         items = []
         for s in self._schedules.values():
             d = s.to_dict()
+            target = "the whole cluster" if s.type == "restart" else self._target_label(s.server)
             d["message"] = (d.get("message") or "") + (
-                f"  [target: {self._target_label(s.server)}]"
+                f"  [target: {target}]"
             )
             items.append(d)
         await interaction.response.send_message(embed=embeds.schedule_list(items))
@@ -225,7 +224,7 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                 if delay > 0:
                     await asyncio.sleep(delay)
 
-                targets = self._targets(sched.server)
+                targets = list(cfg.servers.keys())
 
                 # 5-minute countdown
                 warnings = [300, 60, 30]
@@ -246,9 +245,8 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                 if remaining > 0:
                     await asyncio.sleep(remaining)
 
-                # Save + restart each target container.
+                # Save every world, then restart the cluster as one operation.
                 for key in targets:
-                    sc = cfg.servers[key]
                     try:
                         rcon = self.bot.rcon_for(key)  # type: ignore[attr-defined]
                         await rcon.command("Broadcast Server restarting now...")
@@ -256,10 +254,11 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                         await asyncio.sleep(3)
                     except Exception as exc:
                         log.warning("Scheduled restart RCON failed for %s: %s", key, exc)
-                    ok, out = await dockerctl.restart_container(sc.container)
-                    if not ok:
-                        log.error("Scheduled restart failed for %s: %s", sc.container, out)
-                    await asyncio.sleep(10)
+
+                containers = [cfg.servers[key].container for key in targets]
+                ok, out = await dockerctl.restart_containers(containers)
+                if not ok:
+                    log.error("Scheduled cluster restart failed: %s", out)
         except asyncio.CancelledError:
             pass
 

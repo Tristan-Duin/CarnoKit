@@ -100,7 +100,7 @@ See `config.example.ini` for all available settings with descriptions.
 | Command | Description | Permission |
 |---|---|---|
 | `/schedule auto-save <minutes>` | Set auto-save interval (0 = off) | Admin |
-| `/schedule restart <cron>` | Schedule recurring restarts | Admin |
+| `/schedule restart <cron>` | Schedule recurring whole-cluster restarts | Admin |
 | `/schedule broadcast <cron> <msg>` | Schedule recurring broadcasts | Admin |
 | `/schedule list` | Show active schedules | Everyone |
 | `/schedule cancel <id>` | Cancel a schedule | Admin |

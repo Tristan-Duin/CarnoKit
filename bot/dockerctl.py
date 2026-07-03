@@ -53,6 +53,13 @@ async def restart_container(name: str, timeout: float = 900) -> tuple[bool, str]
     return await _run(["docker", "restart", name], timeout)
 
 
+async def restart_containers(names: list[str], timeout: float = 1200) -> tuple[bool, str]:
+    """Restart several containers as one cluster operation."""
+    if not names:
+        return True, ""
+    return await _run(["docker", "restart", *names], timeout)
+
+
 async def container_running(name: str, timeout: float = 30) -> bool:
     ok, out = await _run(
         ["docker", "inspect", "-f", "{{.State.Running}}", name], timeout

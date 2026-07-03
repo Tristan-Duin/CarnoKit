@@ -116,8 +116,8 @@ All tooling reads `/opt/asa-cluster/config.ini`. Commands accept an optional
 - **Auto-updater** (inside the bot): checks the latest Steam build via a
   throwaway `steamcmd` container and validates configured mod IDs are present
   on disk; on a new build or missing configured mod it warns in-game, saves,
-  and `docker restart`s each map (the image refreshes the server and mods on
-  start). `/update now` can also force that game/mod refresh anytime.
+  and restarts all map containers together (the image refreshes the server and
+  mods on start). `/update now` can also force that game/mod refresh anytime.
 - **Crash analyzer** (run on demand):
   ```bash
   /opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py            # all maps

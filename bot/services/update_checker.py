@@ -281,13 +281,12 @@ class UpdateChecker:
         await asyncio.sleep(5)  # let saves flush
 
     async def _restart_all(self) -> None:
-        """Restart each container (staggered) so the image pulls game/mod updates."""
-        for sc in cfg.servers.values():
-            log.info("Restarting %s (%s) to apply update ...", sc.name, sc.container)
-            ok, out = await dockerctl.restart_container(sc.container)
-            if not ok:
-                log.error("Failed to restart %s: %s", sc.container, out)
-            await asyncio.sleep(15)  # stagger to avoid disk/CPU saturation
+        """Restart every configured server container as one cluster operation."""
+        containers = [sc.container for sc in cfg.servers.values()]
+        log.info("Restarting cluster containers to apply update: %s", ", ".join(containers))
+        ok, out = await dockerctl.restart_containers(containers)
+        if not ok:
+            log.error("Cluster restart failed: %s", out)
 
     async def _post_alert(self, embed: discord.Embed) -> None:
         if cfg.channel_id:
