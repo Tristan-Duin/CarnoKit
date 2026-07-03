@@ -96,9 +96,10 @@ class UpdateChecker:
 
         self._updating = True
         try:
+            reason = self._update_reason()
             countdown = countdown_seconds or (cfg.update_countdown_minutes * 60)
-            await self._countdown(countdown, reason="game/mod update")
-            await self._save_all()
+            await self._countdown(countdown, reason=reason)
+            await self._save_all(reason=reason)
             await self._restart_all()
             await self._post_alert(embeds.success(
                 "Cluster Refreshed & Restarted",
@@ -212,6 +213,15 @@ class UpdateChecker:
     def _configured_mods_label(self) -> str:
         return ",".join(cfg.mods_list) if cfg.mods_list else "none"
 
+    def _update_reason(self) -> str:
+        if self.has_game_update() and self.has_mod_refresh():
+            return "game/mod update"
+        if self.has_game_update():
+            return "server update"
+        if self.has_mod_refresh():
+            return "mod refresh"
+        return "refresh"
+
     def _missing_mods_signature(self) -> tuple[tuple[str, tuple[str, ...]], ...]:
         return tuple(
             (server, tuple(mods))
@@ -269,12 +279,12 @@ class UpdateChecker:
             except Exception:
                 pass
 
-    async def _save_all(self) -> None:
+    async def _save_all(self, reason: str = "update") -> None:
         log.info("Saving all worlds ...")
         for key in cfg.servers:
             try:
                 rcon = self.bot.rcon_for(key)
-                await rcon.command("Broadcast Server shutting down for game/mod update. Saving world...")
+                await rcon.command(f"Broadcast Server shutting down for {reason}. Saving world...")
                 await rcon.command("SaveWorld")
             except Exception as exc:
                 log.warning("SaveWorld failed for %s: %s", key, exc)

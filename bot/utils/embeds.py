@@ -123,27 +123,38 @@ def update_available(
 ) -> discord.Embed:
     game_update = current_build != "unknown" and latest_build != "unknown" and current_build != latest_build
     mod_refresh = bool(missing_mods and any(missing_mods.values()))
-    title = "ARK Game/Mod Update Available" if mod_refresh else "ARK Server Update Available"
+    if game_update and mod_refresh:
+        title = "ARK Server Update + Mod Refresh Needed"
+    elif game_update:
+        title = "ARK Server Update Available"
+    elif mod_refresh:
+        title = "ARK Mod Refresh Needed"
+    else:
+        title = "ARK Refresh Requested"
+
     reasons = []
     if game_update:
         reasons.append("A new server build has been detected.")
     if mod_refresh:
-        reasons.append("One or more configured mods are missing on disk and need a refresh.")
+        reasons.append("The server build is current, but one or more configured mod IDs were not found on disk.")
     if not reasons:
         reasons.append("A refresh has been requested for the configured game server and mods.")
     embed = discord.Embed(
         title=title,
-        description=(
-            f"{' '.join(reasons)}\n\n"
-            f"**Current Build:** `{current_build}`\n"
-            f"**Latest Build:**  `{latest_build}`"
-        ),
+        description=" ".join(reasons),
         color=COLOR_UPDATE,
+    )
+    embed.add_field(name="Installed Build", value=f"`{current_build}`", inline=True)
+    embed.add_field(name="Latest Build", value=f"`{latest_build}`", inline=True)
+    embed.add_field(
+        name="Game Build",
+        value="Update available" if game_update else "Up to date",
+        inline=True,
     )
     if configured_mods is not None:
         embed.add_field(name="Configured Mods", value=_mods_label(configured_mods), inline=False)
     if missing_mods is not None:
-        embed.add_field(name="Mod Refresh Needed", value=_missing_mods_label(missing_mods), inline=False)
+        embed.add_field(name="Configured Mods Not Found On Disk", value=_missing_mods_label(missing_mods), inline=False)
     embed.set_footer(text=_ts())
     return embed
 
@@ -189,7 +200,7 @@ def update_status(
     if configured_mods is not None:
         embed.add_field(name="Configured Mods", value=_mods_label(configured_mods), inline=False)
     if missing_mods is not None:
-        embed.add_field(name="Mod Refresh Needed", value=_missing_mods_label(missing_mods), inline=False)
+        embed.add_field(name="Configured Mods Not Found On Disk", value=_missing_mods_label(missing_mods), inline=False)
     embed.set_footer(text=_ts())
     return embed
 
