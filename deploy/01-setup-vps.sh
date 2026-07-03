@@ -74,12 +74,12 @@ log "Configuring firewall (ufw)"
 # Allow SSH first so we don't lock ourselves out, then the game ports.
 ufw allow OpenSSH >/dev/null 2>&1 || ufw allow 22/tcp >/dev/null 2>&1 || true
 ufw allow 7777:7780/udp >/dev/null 2>&1 || true
-# RCON (27020-27022) is intentionally NOT opened; it is bound to localhost.
+# RCON (27020-27023) is intentionally NOT opened; it is bound to localhost.
 ufw --force enable
 
 # ---------------------------------------------------------------------------
 log "Creating cluster data directories under ${BASE_DIR}"
-for srv in island scorched valguero lostcolony; do
+for srv in island scorched genesis lostcolony; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -91,7 +91,7 @@ mkdir -p "${BASE_DIR}/cluster-shared"
 chown -R "${SERVER_UID}:${SERVER_GID}" \
   "${BASE_DIR}/island" \
   "${BASE_DIR}/scorched" \
-  "${BASE_DIR}/valguero" \
+  "${BASE_DIR}/genesis" \
   "${BASE_DIR}/lostcolony" \
   "${BASE_DIR}/cluster-shared"
 

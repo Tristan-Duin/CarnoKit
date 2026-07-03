@@ -26,7 +26,7 @@ SERVER_UID=25000
 SERVER_GID=25000
 
 echo "==> Ensuring data directories under ${BASE_DIR}"
-for srv in island scorched valguero lostcolony; do
+for srv in island scorched genesis lostcolony; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -39,7 +39,7 @@ if [[ "${EUID}" -eq 0 ]]; then
   chown -R "${SERVER_UID}:${SERVER_GID}" \
     "${BASE_DIR}/island" \
     "${BASE_DIR}/scorched" \
-    "${BASE_DIR}/valguero" \
+    "${BASE_DIR}/genesis" \
     "${BASE_DIR}/lostcolony" \
     "${BASE_DIR}/cluster-shared"
 else
@@ -52,8 +52,8 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "==> Starting the cluster (docker compose -p asa-cluster up -d)"
-docker compose -p asa-cluster up -d
+echo "==> Starting the cluster (docker compose -p asa-cluster up -d --remove-orphans)"
+docker compose -p asa-cluster up -d --remove-orphans
 
 cat <<EOF
 
@@ -64,7 +64,7 @@ the server (~10-30 GB), Proton initialises, then the mods download. Expect
 Follow progress:
   docker logs -f asa-island
   docker logs -f asa-scorched
-  docker logs -f asa-valguero
+  docker logs -f asa-genesis
   docker logs -f asa-lostcolony
 
 Find the session name (once booted):

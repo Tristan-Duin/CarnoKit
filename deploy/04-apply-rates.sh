@@ -12,7 +12,7 @@
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
-MAPS="island scorched valguero lostcolony"
+MAPS="island scorched genesis lostcolony"
 SERVER_UID=25000
 SERVER_GID=25000
 
@@ -122,7 +122,7 @@ sleep 30
 
 echo "==> Stopping cluster"
 cd "${BASE_DIR}/deploy"
-docker compose -p asa-cluster down
+docker compose -p asa-cluster down --remove-orphans
 
 repair_data_permissions
 
@@ -183,7 +183,7 @@ for m in ${MAPS}; do
   case "${m}" in
     island)       map_label="Island" ;;
     scorched)     map_label="Scorched" ;;
-    valguero)     map_label="Valguero" ;;
+    genesis)      map_label="Genesis 1" ;;
     lostcolony)   map_label="Lost Colony" ;;
     *)            map_label="${m}" ;;
   esac
@@ -356,4 +356,4 @@ repair_data_permissions
 
 echo "==> Starting cluster"
 docker compose -p asa-cluster up -d --force-recreate asa-permissions
-docker compose -p asa-cluster up -d
+docker compose -p asa-cluster up -d --remove-orphans

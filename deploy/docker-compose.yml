@@ -1,6 +1,6 @@
 # ARK: Survival Ascended - 4-map cluster
 #
-# Runs The Island, Scorched Earth, Valguero and Lost Colony as clustered containers
+# Runs The Island, Scorched Earth, Genesis 1 and Lost Colony as clustered containers
 # using the maintained mschnitzer/asa-linux-server image (Windows server
 # binary via Proton). All tunables come from the sibling .env file.
 #
@@ -25,7 +25,7 @@ services:
       - -c
       - |
         set -eu
-        for srv in island scorched valguero lostcolony; do
+        for srv in island scorched genesis lostcolony; do
           mkdir -p "/data/$${srv}/server-files" "/data/$${srv}/steam/compatibilitytools.d" "/data/$${srv}/steamcmd"
           chown -R 25000:25000 "/data/$${srv}"
         done
@@ -90,25 +90,25 @@ services:
     networks:
       - asa-network
 
-  asa-valguero:
+  asa-genesis:
     image: mschnitzer/asa-linux-server:latest
-    container_name: asa-valguero
-    hostname: asa-valguero
+    container_name: asa-genesis
+    hostname: asa-genesis
     entrypoint: "/usr/bin/start_server"
     user: gameserver
     tty: true
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=Valguero_WP?listen?Port=${VALGUERO_GAME_PORT}?RCONPort=${VALGUERO_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ASA_START_PARAMS=Genesis_WP?listen?Port=${GENESIS_GAME_PORT}?RCONPort=${GENESIS_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
-      - "0.0.0.0:${VALGUERO_GAME_PORT}:${VALGUERO_GAME_PORT}/udp"
-      - "127.0.0.1:${VALGUERO_RCON_PORT}:${VALGUERO_RCON_PORT}/tcp"
+      - "0.0.0.0:${GENESIS_GAME_PORT}:${GENESIS_GAME_PORT}/udp"
+      - "127.0.0.1:${GENESIS_RCON_PORT}:${GENESIS_RCON_PORT}/tcp"
     volumes:
-      - ${BASE_DIR}/valguero/steam:/home/gameserver/Steam:rw
-      - ${BASE_DIR}/valguero/steamcmd:/home/gameserver/steamcmd:rw
-      - ${BASE_DIR}/valguero/server-files:/home/gameserver/server-files:rw
+      - ${BASE_DIR}/genesis/steam:/home/gameserver/Steam:rw
+      - ${BASE_DIR}/genesis/steamcmd:/home/gameserver/steamcmd:rw
+      - ${BASE_DIR}/genesis/server-files:/home/gameserver/server-files:rw
       - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
       - /etc/localtime:/etc/localtime:ro
     depends_on:
