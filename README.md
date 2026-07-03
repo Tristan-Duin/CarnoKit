@@ -80,7 +80,7 @@ See `config.example.ini` for all available settings with descriptions.
 | `/players ban <player> [reason]` | Ban a player | Admin |
 | `/players unban <id>` | Unban a player | Admin |
 | `/players message <player> <text>` | DM a player in-game | Admin |
-| `/players broadcast <text>` | Server-wide broadcast | Admin |
+| `/players broadcast <text> [server]` | Broadcast to one server or all servers | Admin |
 
 ### Admin
 | Command | Description | Permission |

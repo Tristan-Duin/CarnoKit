@@ -8,7 +8,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from config import server_choices
+from config import cfg, server_choices, server_choices_with_all
 from utils import embeds
 from utils.permissions import require_admin
 
@@ -111,10 +111,37 @@ class PlayersCog(commands.GroupCog, group_name="players"):
 
     @app_commands.command(name="broadcast", description="Send a server-wide broadcast message")
     @app_commands.describe(text="Message to broadcast to all players", server="Target map (default: first)")
-    @app_commands.choices(server=server_choices())
+    @app_commands.choices(server=server_choices_with_all())
     @require_admin
     async def broadcast(self, interaction: discord.Interaction, text: str, server: Optional[str] = None):
         await interaction.response.defer()
+        if server == "__all__":
+            sent: list[str] = []
+            failed: list[str] = []
+
+            for key, sc in cfg.servers.items():
+                try:
+                    rcon = self.bot.rcon_for(key)  # type: ignore[attr-defined]
+                    await rcon.ensure_connected()
+                    await rcon.command(f'ServerChat "{text}"')
+                    sent.append(sc.name)
+                except Exception as exc:
+                    failed.append(f"{sc.name}: `{exc}`")
+
+            if failed:
+                detail = ""
+                if sent:
+                    detail += f"Sent to: {', '.join(sent)}\n\n"
+                detail += "Failed:\n" + "\n".join(failed)
+                await interaction.followup.send(
+                    embed=embeds.warning("Broadcast Partially Sent", detail)
+                )
+            else:
+                await interaction.followup.send(
+                    embed=embeds.success("Broadcast Sent", f"Sent to all {len(sent)} servers.")
+                )
+            return
+
         rcon = self.bot.rcon_for(server)  # type: ignore[attr-defined]
         await rcon.ensure_connected()
         resp = await rcon.command(f'ServerChat "{text}"')

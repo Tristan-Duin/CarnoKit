@@ -144,3 +144,10 @@ def server_choices() -> list:
     if app_commands is None:
         return []
     return [app_commands.Choice(name=s.name, value=k) for k, s in cfg.servers.items()]
+
+
+def server_choices_with_all() -> list:
+    """Discord choices for commands that can target one map or the whole cluster."""
+    if app_commands is None:
+        return []
+    return [app_commands.Choice(name="All servers", value="__all__"), *server_choices()]
