@@ -22,6 +22,9 @@ from utils.permissions import require_admin
 
 log = logging.getLogger(__name__)
 
+_RESTART_WARNINGS = [1800, 900, 300]
+_SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
+
 
 class _Schedule:
     """A single scheduled job.  ``server`` is a server key, or "" for all maps."""
@@ -220,17 +223,18 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
         try:
             while sched.enabled:
                 nxt = croniter(sched.cron, datetime.now()).get_next(datetime)
-                delay = (nxt - datetime.now()).total_seconds()
+                countdown_window = max(_RESTART_WARNINGS)
+                delay = (nxt - datetime.now()).total_seconds() - countdown_window
                 if delay > 0:
                     await asyncio.sleep(delay)
+                    remaining = countdown_window
+                else:
+                    remaining = max(0, int((nxt - datetime.now()).total_seconds()))
 
                 targets = list(cfg.servers.keys())
 
-                # 5-minute countdown
-                warnings = [300, 60, 30]
-                remaining = 300
-                for warn_at in warnings:
-                    if remaining <= warn_at:
+                for warn_at in sorted(_RESTART_WARNINGS, reverse=True):
+                    if remaining < warn_at:
                         continue
                     await asyncio.sleep(remaining - warn_at)
                     remaining = warn_at
@@ -242,6 +246,7 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                             )
                         except Exception:
                             pass
+                    await self._post_restart_warning(remaining)
                 if remaining > 0:
                     await asyncio.sleep(remaining)
 
@@ -261,6 +266,21 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                     log.error("Scheduled cluster restart failed: %s", out)
         except asyncio.CancelledError:
             pass
+
+    async def _post_restart_warning(self, seconds_left: int) -> None:
+        if not cfg.channel_id:
+            return
+        ch = self.bot.get_channel(cfg.channel_id)
+        if not isinstance(ch, discord.TextChannel):
+            return
+        try:
+            await ch.send(
+                content=_SURVIVER_ROLE_MENTION,
+                embed=embeds.update_countdown(seconds_left, "scheduled restart"),
+                allowed_mentions=discord.AllowedMentions(roles=True),
+            )
+        except Exception as exc:
+            log.warning("Failed to post scheduled restart warning: %s", exc)
 
     async def _cron_broadcast_loop(self, sched: _Schedule) -> None:
         """Wait for the next cron tick, then broadcast a message to the targets."""

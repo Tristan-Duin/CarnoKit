@@ -27,7 +27,8 @@ from utils.formatting import countdown_label
 log = logging.getLogger(__name__)
 
 # Standard countdown warning schedule (seconds before shutdown).
-_WARN_SCHEDULE = [1800, 900, 300, 60, 30]
+_WARN_SCHEDULE = [1800, 900, 300]
+_SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
 
 
 class UpdateChecker:
@@ -267,7 +268,10 @@ class UpdateChecker:
             label = countdown_label(remaining)
             msg = f"Server {reason} in {label}. Please find a safe spot!"
             await self._broadcast_all(msg)
-            await self._post_alert(embeds.update_countdown(remaining, reason))
+            await self._post_alert(
+                embeds.update_countdown(remaining, reason),
+                content=_SURVIVER_ROLE_MENTION,
+            )
 
         if remaining > 0:
             await asyncio.sleep(remaining)
@@ -298,11 +302,15 @@ class UpdateChecker:
         if not ok:
             log.error("Cluster restart failed: %s", out)
 
-    async def _post_alert(self, embed: discord.Embed) -> None:
+    async def _post_alert(self, embed: discord.Embed, content: str | None = None) -> None:
         if cfg.channel_id:
             ch = self.bot.get_channel(cfg.channel_id)
             if isinstance(ch, discord.TextChannel):
                 try:
-                    await ch.send(embed=embed)
+                    await ch.send(
+                        content=content,
+                        embed=embed,
+                        allowed_mentions=discord.AllowedMentions(roles=True),
+                    )
                 except Exception as exc:
                     log.warning("Failed to post update alert: %s", exc)
