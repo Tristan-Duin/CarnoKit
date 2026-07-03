@@ -108,9 +108,9 @@ See `config.example.ini` for all available settings with descriptions.
 ### Updates
 | Command | Description | Permission |
 |---|---|---|
-| `/update check` | Check for game updates and missing configured mods | Admin |
-| `/update status` | Show installed/latest build plus configured mod state | Everyone |
-| `/update now` | Force game/mod refresh with countdown | Owner |
+| `/update check` | Check for game server updates | Admin |
+| `/update status` | Show installed/latest game build state | Everyone |
+| `/update now` | Force a server refresh with countdown | Owner |
 
 ### Logs
 | Command | Description | Permission |
