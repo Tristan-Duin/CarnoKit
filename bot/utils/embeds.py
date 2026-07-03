@@ -103,16 +103,47 @@ def rcon_response(command: str, response: str) -> discord.Embed:
 
 # ── Update / restart ──────────────────────────────────────────────────────────
 
-def update_available(current_build: str, latest_build: str) -> discord.Embed:
+def _mods_label(mods: list[str]) -> str:
+    return ", ".join(f"`{mod_id}`" for mod_id in mods) if mods else "`none`"
+
+
+def _missing_mods_label(missing_mods: dict[str, list[str]]) -> str:
+    rows = []
+    for server, mods in missing_mods.items():
+        if mods:
+            rows.append(f"**{server}:** {_mods_label(mods)}")
+    return "\n".join(rows) if rows else "All configured mods were found on disk."
+
+
+def update_available(
+    current_build: str,
+    latest_build: str,
+    configured_mods: list[str] | None = None,
+    missing_mods: dict[str, list[str]] | None = None,
+) -> discord.Embed:
+    game_update = current_build != "unknown" and latest_build != "unknown" and current_build != latest_build
+    mod_refresh = bool(missing_mods and any(missing_mods.values()))
+    title = "ARK Game/Mod Update Available" if mod_refresh else "ARK Server Update Available"
+    reasons = []
+    if game_update:
+        reasons.append("A new server build has been detected.")
+    if mod_refresh:
+        reasons.append("One or more configured mods are missing on disk and need a refresh.")
+    if not reasons:
+        reasons.append("A refresh has been requested for the configured game server and mods.")
     embed = discord.Embed(
-        title="ARK Server Update Available",
+        title=title,
         description=(
-            f"A new server update has been detected.\n\n"
+            f"{' '.join(reasons)}\n\n"
             f"**Current Build:** `{current_build}`\n"
             f"**Latest Build:**  `{latest_build}`"
         ),
         color=COLOR_UPDATE,
     )
+    if configured_mods is not None:
+        embed.add_field(name="Configured Mods", value=_mods_label(configured_mods), inline=False)
+    if missing_mods is not None:
+        embed.add_field(name="Mod Refresh Needed", value=_missing_mods_label(missing_mods), inline=False)
     embed.set_footer(text=_ts())
     return embed
 
@@ -131,21 +162,34 @@ def update_status(
     latest_build: str | None,
     auto_update: bool,
     check_interval: int,
+    configured_mods: list[str] | None = None,
+    missing_mods: dict[str, list[str]] | None = None,
 ) -> discord.Embed:
     is_current = latest_build and current_build == latest_build
+    mod_refresh = bool(missing_mods and any(missing_mods.values()))
+    if latest_build is None:
+        status = "Latest build unknown"
+    elif is_current and not mod_refresh:
+        status = "Up to date"
+    else:
+        status = "Update available"
     embed = discord.Embed(
         title="Update Status",
-        color=COLOR_OK if is_current else COLOR_WARN,
+        color=COLOR_OK if is_current and not mod_refresh else COLOR_WARN,
     )
     embed.add_field(name="Installed Build", value=f"`{current_build}`", inline=True)
     embed.add_field(name="Latest Build", value=f"`{latest_build or 'unknown'}`", inline=True)
     embed.add_field(
         name="Status",
-        value="Up to date" if is_current else "Update available",
+        value=status,
         inline=True,
     )
     embed.add_field(name="Auto-Update", value="Enabled" if auto_update else "Disabled", inline=True)
     embed.add_field(name="Check Interval", value=f"{check_interval} min", inline=True)
+    if configured_mods is not None:
+        embed.add_field(name="Configured Mods", value=_mods_label(configured_mods), inline=False)
+    if missing_mods is not None:
+        embed.add_field(name="Mod Refresh Needed", value=_missing_mods_label(missing_mods), inline=False)
     embed.set_footer(text=_ts())
     return embed
 

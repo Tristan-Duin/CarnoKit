@@ -114,8 +114,10 @@ All tooling reads `/opt/asa-cluster/config.ini`. Commands accept an optional
   `docker restart` on that container (per-map circuit breaker + boot grace so
   first boots/updates aren't interrupted). `journalctl -u asa-watchdog -f`.
 - **Auto-updater** (inside the bot): checks the latest Steam build via a
-  throwaway `steamcmd` container; on a new build it warns in-game, saves, and
-  `docker restart`s each map (the image self-updates on start).
+  throwaway `steamcmd` container and validates configured mod IDs are present
+  on disk; on a new build or missing configured mod it warns in-game, saves,
+  and `docker restart`s each map (the image refreshes the server and mods on
+  start). `/update now` can also force that game/mod refresh anytime.
 - **Crash analyzer** (run on demand):
   ```bash
   /opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py            # all maps

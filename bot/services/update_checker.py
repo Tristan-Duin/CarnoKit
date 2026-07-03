@@ -1,4 +1,4 @@
-"""Detects ARK server updates and applies them across the cluster.
+"""Detects ARK server/mod updates and applies them across the cluster.
 
 Build detection uses a throwaway ``steamcmd`` container to read the latest
 public build id, compared against the installed build id in each server's
@@ -6,7 +6,8 @@ public build id, compared against the installed build id in each server's
 
 Applying an update does NOT manage any host process: it broadcasts an
 in-game countdown, saves every world, then ``docker restart``s each
-container - the server image re-runs SteamCMD on start, pulling the update.
+container - the server image re-runs SteamCMD/mod setup on start, pulling
+the update.
 """
 
 from __future__ import annotations
@@ -14,7 +15,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from pathlib import Path
 from typing import Optional
 
 import discord
@@ -31,7 +31,7 @@ _WARN_SCHEDULE = [1800, 900, 300, 60, 30]
 
 
 class UpdateChecker:
-    """Polls for ARK server updates and orchestrates the cluster update cycle."""
+    """Polls for ARK server/mod updates and orchestrates the cluster update cycle."""
 
     def __init__(self, bot: discord.Client):
         self.bot = bot
@@ -39,6 +39,9 @@ class UpdateChecker:
         self._updating = False
         self.current_build: str = ""
         self.latest_build: Optional[str] = None
+        self.installed_mods: dict[str, list[str]] = {}
+        self.missing_mods: dict[str, list[str]] = {}
+        self._last_auto_mod_refresh_signature: tuple[tuple[str, tuple[str, ...]], ...] | None = None
         self._enabled = True
 
     # ── Lifecycle ─────────────────────────────────────────────────────────
@@ -59,16 +62,31 @@ class UpdateChecker:
     async def check_now(self) -> tuple[str, str | None]:
         """Check for updates right now.  Returns (current, latest)."""
         self.current_build = await asyncio.to_thread(self._read_installed_build)
+        self.installed_mods = await asyncio.to_thread(self._read_installed_mods)
+        self.missing_mods = self._missing_configured_mods(self.installed_mods)
         self.latest_build = await self._fetch_latest_build()
         return self.current_build, self.latest_build
 
-    def has_update(self) -> bool:
+    def has_game_update(self) -> bool:
         return bool(
             self.current_build
             and self.latest_build
             and self.current_build != "unknown"
             and self.current_build != self.latest_build
         )
+
+    def has_mod_refresh(self) -> bool:
+        return any(self.missing_mods.values())
+
+    def has_update(self) -> bool:
+        return self.has_game_update() or self.has_mod_refresh()
+
+    def should_auto_update(self) -> bool:
+        if self.has_game_update():
+            return True
+        if not self.has_mod_refresh():
+            return False
+        return self._missing_mods_signature() != self._last_auto_mod_refresh_signature
 
     async def run_update_cycle(self, countdown_seconds: int | None = None) -> None:
         """Countdown -> save all -> docker restart all -> announce."""
@@ -79,12 +97,16 @@ class UpdateChecker:
         self._updating = True
         try:
             countdown = countdown_seconds or (cfg.update_countdown_minutes * 60)
-            await self._countdown(countdown, reason="update")
+            await self._countdown(countdown, reason="game/mod update")
             await self._save_all()
             await self._restart_all()
             await self._post_alert(embeds.success(
-                "Cluster Updated & Restarted",
-                f"Build `{self.latest_build}` is now live on all maps.",
+                "Cluster Refreshed & Restarted",
+                (
+                    f"Build `{self.latest_build or self.current_build or 'unknown'}` "
+                    f"and configured mods `{self._configured_mods_label()}` have been "
+                    "refreshed on all maps."
+                ),
             ))
         except Exception as exc:
             log.error("Update cycle failed: %s", exc)
@@ -96,6 +118,8 @@ class UpdateChecker:
 
     async def _check_loop(self) -> None:
         self.current_build = await asyncio.to_thread(self._read_installed_build)
+        self.installed_mods = await asyncio.to_thread(self._read_installed_mods)
+        self.missing_mods = self._missing_configured_mods(self.installed_mods)
         log.info("Installed server build: %s", self.current_build)
 
         try:
@@ -105,12 +129,24 @@ class UpdateChecker:
                     break
                 try:
                     _, latest = await self.check_now()
-                    if self.has_update():
-                        log.info("Update detected: %s -> %s", self.current_build, latest)
+                    if self.should_auto_update():
+                        log.info(
+                            "Update detected: build %s -> %s, missing mods: %s",
+                            self.current_build,
+                            latest,
+                            self.missing_mods,
+                        )
                         await self._post_alert(
-                            embeds.update_available(self.current_build, latest or "unknown")
+                            embeds.update_available(
+                                self.current_build,
+                                latest or "unknown",
+                                configured_mods=cfg.mods_list,
+                                missing_mods=self.missing_mods,
+                            )
                         )
                         await self.run_update_cycle()
+                        if self.has_mod_refresh():
+                            self._last_auto_mod_refresh_signature = self._missing_mods_signature()
                 except Exception as exc:
                     log.warning("Update check error: %s", exc)
         except asyncio.CancelledError:
@@ -131,6 +167,57 @@ class UpdateChecker:
                 if m:
                     return m.group(1)
         return "unknown"
+
+    def _read_installed_mods(self) -> dict[str, list[str]]:
+        """Best-effort scan of installed ASA mod ids for every server.
+
+        CurseForge mods are installed by the ASA container during startup. The
+        exact on-disk layout can vary by image/game version, so this checks the
+        common shallow mod roots and treats numeric directory or file names as
+        installed mod ids.
+        """
+        installed: dict[str, list[str]] = {}
+        roots = (
+            ("ShooterGame", "Saved", "Mods"),
+            ("ShooterGame", "Content", "Mods"),
+        )
+        for sc in cfg.servers.values():
+            found: set[str] = set()
+            for parts in roots:
+                root = sc.server_files.joinpath(*parts)
+                if not root.is_dir():
+                    continue
+                try:
+                    children = list(root.iterdir())
+                except OSError as exc:
+                    log.warning("Could not inspect mod directory %s: %s", root, exc)
+                    continue
+                for child in children:
+                    mod_id = child.stem if child.is_file() else child.name
+                    if mod_id.isdigit():
+                        found.add(mod_id)
+            installed[sc.key] = sorted(found)
+        return installed
+
+    def _missing_configured_mods(self, installed: dict[str, list[str]]) -> dict[str, list[str]]:
+        configured = set(cfg.mods_list)
+        if not configured:
+            return {}
+        missing: dict[str, list[str]] = {}
+        for key in cfg.servers:
+            present = set(installed.get(key, []))
+            missing[key] = sorted(configured - present)
+        return missing
+
+    def _configured_mods_label(self) -> str:
+        return ",".join(cfg.mods_list) if cfg.mods_list else "none"
+
+    def _missing_mods_signature(self) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        return tuple(
+            (server, tuple(mods))
+            for server, mods in sorted(self.missing_mods.items())
+            if mods
+        )
 
     async def _fetch_latest_build(self) -> str | None:
         """Query the latest public build id via a throwaway steamcmd container."""
@@ -187,14 +274,14 @@ class UpdateChecker:
         for key in cfg.servers:
             try:
                 rcon = self.bot.rcon_for(key)
-                await rcon.command("Broadcast Server shutting down for update. Saving world...")
+                await rcon.command("Broadcast Server shutting down for game/mod update. Saving world...")
                 await rcon.command("SaveWorld")
             except Exception as exc:
                 log.warning("SaveWorld failed for %s: %s", key, exc)
         await asyncio.sleep(5)  # let saves flush
 
     async def _restart_all(self) -> None:
-        """Restart each container (staggered) so the image pulls the update."""
+        """Restart each container (staggered) so the image pulls game/mod updates."""
         for sc in cfg.servers.values():
             log.info("Restarting %s (%s) to apply update ...", sc.name, sc.container)
             ok, out = await dockerctl.restart_container(sc.container)
