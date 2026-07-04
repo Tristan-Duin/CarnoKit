@@ -38,6 +38,7 @@ class UpdateChecker:
         self._task: Optional[asyncio.Task] = None
         self._updating = False
         self.current_build: str = ""
+        self.installed_builds: dict[str, str] = {}
         self.latest_build: Optional[str] = None
         self.installed_mods: dict[str, list[str]] = {}
         self.missing_mods: dict[str, list[str]] = {}
@@ -60,13 +61,19 @@ class UpdateChecker:
 
     async def check_now(self) -> tuple[str, str | None]:
         """Check for updates right now.  Returns (current, latest)."""
-        self.current_build = await asyncio.to_thread(self._read_installed_build)
+        self.installed_builds = await asyncio.to_thread(self._read_installed_builds)
+        self.current_build = self._format_installed_builds(self.installed_builds)
         self.installed_mods = {}
         self.missing_mods = {}
         self.latest_build = await self._fetch_latest_build()
         return self.current_build, self.latest_build
 
     def has_game_update(self) -> bool:
+        if self.installed_builds and self.latest_build and self.latest_build != "unknown":
+            return any(
+                build == "unknown" or build != self.latest_build
+                for build in self.installed_builds.values()
+            )
         return bool(
             self.current_build
             and self.latest_build
@@ -109,7 +116,8 @@ class UpdateChecker:
     # ── Polling loop ──────────────────────────────────────────────────────
 
     async def _check_loop(self) -> None:
-        self.current_build = await asyncio.to_thread(self._read_installed_build)
+        self.installed_builds = await asyncio.to_thread(self._read_installed_builds)
+        self.current_build = self._format_installed_builds(self.installed_builds)
         self.installed_mods = {}
         self.missing_mods = {}
         log.info("Installed server build: %s", self.current_build)
@@ -141,10 +149,12 @@ class UpdateChecker:
 
     # ── Build ID helpers ──────────────────────────────────────────────────
 
-    def _read_installed_build(self) -> str:
-        """Read installed build id from any server's Steam app manifest."""
-        for sc in cfg.servers.values():
+    def _read_installed_builds(self) -> dict[str, str]:
+        """Read installed build ids from every server's Steam app manifest."""
+        builds: dict[str, str] = {}
+        for key, sc in cfg.servers.items():
             manifest = sc.server_files / "steamapps" / f"appmanifest_{cfg.asa_app_id}.acf"
+            builds[key] = "unknown"
             if manifest.exists():
                 try:
                     text = manifest.read_text(encoding="utf-8", errors="replace")
@@ -152,8 +162,25 @@ class UpdateChecker:
                     continue
                 m = re.search(r'"buildid"\s+"(\d+)"', text)
                 if m:
-                    return m.group(1)
-        return "unknown"
+                    builds[key] = m.group(1)
+        return builds
+
+    def _read_installed_build(self) -> str:
+        """Read installed build ids and return a compact cluster summary."""
+        return self._format_installed_builds(self._read_installed_builds())
+
+    def _format_installed_builds(self, builds: dict[str, str]) -> str:
+        """Return one build id when all maps match, otherwise a readable summary."""
+        if not builds:
+            return "unknown"
+
+        unique = set(builds.values())
+        if len(unique) == 1:
+            return next(iter(unique))
+
+        return "mixed (" + ", ".join(
+            f"{key}:{build}" for key, build in builds.items()
+        ) + ")"
 
     def _update_reason(self) -> str:
         if self.has_game_update():
