@@ -105,6 +105,9 @@ See `config.example.ini` for all available settings with descriptions.
 | `/schedule list` | Show active schedules | Everyone |
 | `/schedule cancel <id>` | Cancel a schedule | Admin |
 
+The bot and shipped map profile both default to 15-minute auto-saves:
+`auto_save_minutes = 15` and `AutoSavePeriodMinutes=15.0`.
+
 ### Updates
 | Command | Description | Permission |
 |---|---|---|

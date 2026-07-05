@@ -92,7 +92,7 @@ class Settings:
 
         # [scheduler]
         self.schedule_file = Path(cp.get("scheduler", "schedule_file", fallback="schedules.json"))
-        self.auto_save_minutes = cp.getint("scheduler", "auto_save_minutes", fallback=10)
+        self.auto_save_minutes = cp.getint("scheduler", "auto_save_minutes", fallback=15)
 
         # [servers] + [server.<key>]
         self.servers: Dict[str, ServerConfig] = {}

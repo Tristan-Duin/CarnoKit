@@ -51,7 +51,7 @@ update_countdown_minutes = 30
 
 [scheduler]
 schedule_file = schedules.json
-auto_save_minutes = 10
+auto_save_minutes = 15
 
 [watchdog]
 poll_seconds = 30

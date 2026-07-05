@@ -243,7 +243,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("AlwaysAllowStructurePickup", "True"),
     ("NonPermanentDiseases", "True"),
     ("DinoCountMultiplier", "0.9"),
-    ("AutoSavePeriodMinutes", "30.0"),
+    ("AutoSavePeriodMinutes", "15.0"),
     ("ResourceNoReplenishRadiusStructures", "0.5"),
 ])
 
