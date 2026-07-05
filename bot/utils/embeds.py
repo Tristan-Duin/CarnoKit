@@ -161,8 +161,9 @@ def update_available(
 
 def update_countdown(seconds_left: int, reason: str = "update") -> discord.Embed:
     label = countdown_label(seconds_left)
+    reason_label = reason[:1].upper() + reason[1:]
     return discord.Embed(
-        title=f"Server {reason.title()} in {label}",
+        title=f"{reason_label} in {label}",
         description=f"The server will save and shut down for a {reason} in **{label}**.",
         color=COLOR_WARN,
     ).set_footer(text=_ts())

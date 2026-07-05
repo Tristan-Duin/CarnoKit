@@ -26,7 +26,8 @@ from utils.formatting import countdown_label
 log = logging.getLogger(__name__)
 
 # Standard countdown warning schedule (seconds before shutdown).
-_WARN_SCHEDULE = [1800, 900, 300]
+_WARN_SCHEDULE = [1800, 900, 300, 60]
+_FINAL_SAVE_FLUSH_SECONDS = 20
 _SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
 
 
@@ -101,7 +102,7 @@ class UpdateChecker:
             reason = self._update_reason()
             countdown = countdown_seconds or (cfg.update_countdown_minutes * 60)
             await self._countdown(countdown, reason=reason)
-            await self._save_all(reason=reason)
+            await self._save_all(reason=reason, flush_seconds=_FINAL_SAVE_FLUSH_SECONDS)
             await self._restart_all()
             await self._post_alert(embeds.success(
                 "Cluster Updated & Restarted",
@@ -223,15 +224,27 @@ class UpdateChecker:
             await asyncio.sleep(wait)
             remaining = warn_at
             label = countdown_label(remaining)
-            msg = f"Server {reason} in {label}. Please find a safe spot!"
+            msg = f"{self._reason_label(reason)} in {label}. Please find a safe spot!"
             await self._broadcast_all(msg)
             await self._post_alert(
                 embeds.update_countdown(remaining, reason),
                 content=_SURVIVER_ROLE_MENTION,
             )
+            if warn_at == 60:
+                await self._save_all(
+                    reason=reason,
+                    flush_seconds=0,
+                    broadcast_message=(
+                        f"{self._reason_label(reason)} in 1 minute. "
+                        "Saving world progress now..."
+                    ),
+                )
 
         if remaining > 0:
             await asyncio.sleep(remaining)
+
+    def _reason_label(self, reason: str) -> str:
+        return reason[:1].upper() + reason[1:]
 
     async def _broadcast_all(self, message: str) -> None:
         for key in cfg.servers:
@@ -240,16 +253,25 @@ class UpdateChecker:
             except Exception:
                 pass
 
-    async def _save_all(self, reason: str = "update") -> None:
+    async def _save_all(
+        self,
+        reason: str = "update",
+        *,
+        flush_seconds: int = 5,
+        broadcast_message: str | None = None,
+    ) -> None:
         log.info("Saving all worlds ...")
         for key in cfg.servers:
             try:
                 rcon = self.bot.rcon_for(key)
-                await rcon.command(f"Broadcast Server shutting down for {reason}. Saving world...")
+                await rcon.command(
+                    f"Broadcast {broadcast_message or f'Server shutting down for {reason}. Saving world...'}"
+                )
                 await rcon.command("SaveWorld")
             except Exception as exc:
                 log.warning("SaveWorld failed for %s: %s", key, exc)
-        await asyncio.sleep(5)  # let saves flush
+        if flush_seconds > 0:
+            await asyncio.sleep(flush_seconds)  # let saves flush
 
     async def _restart_all(self) -> None:
         """Restart every configured server container as one cluster operation."""

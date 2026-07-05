@@ -22,7 +22,8 @@ from utils.permissions import require_admin
 
 log = logging.getLogger(__name__)
 
-_RESTART_WARNINGS = [1800, 900, 300]
+_RESTART_WARNINGS = [1800, 900, 300, 60]
+_FINAL_SAVE_FLUSH_SECONDS = 20
 _SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
 
 
@@ -247,18 +248,21 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                         except Exception:
                             pass
                     await self._post_restart_warning(remaining)
+                    if warn_at == 60:
+                        await self._save_targets(
+                            targets,
+                            broadcast_message="Server restart in 1 minute. Saving world progress now...",
+                            flush_seconds=0,
+                        )
                 if remaining > 0:
                     await asyncio.sleep(remaining)
 
                 # Save every world, then restart the cluster as one operation.
-                for key in targets:
-                    try:
-                        rcon = self.bot.rcon_for(key)  # type: ignore[attr-defined]
-                        await rcon.command("Broadcast Server restarting now...")
-                        await rcon.command("SaveWorld")
-                        await asyncio.sleep(3)
-                    except Exception as exc:
-                        log.warning("Scheduled restart RCON failed for %s: %s", key, exc)
+                await self._save_targets(
+                    targets,
+                    broadcast_message="Server restarting now. Final save in progress...",
+                    flush_seconds=_FINAL_SAVE_FLUSH_SECONDS,
+                )
 
                 containers = [cfg.servers[key].container for key in targets]
                 ok, out = await dockerctl.restart_containers(containers)
@@ -266,6 +270,23 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
                     log.error("Scheduled cluster restart failed: %s", out)
         except asyncio.CancelledError:
             pass
+
+    async def _save_targets(
+        self,
+        targets: List[str],
+        *,
+        broadcast_message: str,
+        flush_seconds: int,
+    ) -> None:
+        for key in targets:
+            try:
+                rcon = self.bot.rcon_for(key)  # type: ignore[attr-defined]
+                await rcon.command(f"Broadcast {broadcast_message}")
+                await rcon.command("SaveWorld")
+            except Exception as exc:
+                log.warning("Scheduled restart RCON failed for %s: %s", key, exc)
+        if flush_seconds > 0:
+            await asyncio.sleep(flush_seconds)
 
     async def _post_restart_warning(self, seconds_left: int) -> None:
         if not cfg.channel_id:
