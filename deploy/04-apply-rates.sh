@@ -159,6 +159,11 @@ PhotoModeRangeLimit=9000
 ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemConsumable_RawPrimeMeat_C",Quantity=(MaxItemQuantity=5,bIgnoreMultiplier=True))
 ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemConsumable_RawMutton_C",Quantity=(MaxItemQuantity=5,bIgnoreMultiplier=True))
 ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemConsumable_Honey_C",Quantity=(MaxItemQuantity=5,bIgnoreMultiplier=True))
+ConfigOverrideItemMaxQuantity=(ItemClassString="PrimalItemResource_Polymer_Organic_C",Quantity=(MaxItemQuantity=50,bIgnoreMultiplier=True))
+# Block only Dragontopia DLC Umbra dragons from wild spawns.
+NPCReplacements=(FromClassName="UmbraDragon_Character_BP_C",ToClassName="")
+NPCReplacements=(FromClassName="DragonUmbra_Character_BP_C",ToClassName="")
+NPCReplacements=(FromClassName="Umbra_Character_BP_C",ToClassName="")
 GAMEINI
 
 for m in ${MAPS}; do

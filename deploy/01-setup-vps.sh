@@ -56,6 +56,21 @@ fi
 sysctl -w vm.max_map_count=262144
 
 # ---------------------------------------------------------------------------
+log "Applying ASA UDP/network buffer tuning"
+cat >/etc/sysctl.d/99-asa-network.conf <<'EOF'
+# ASA dedicated servers are UDP-heavy. Keep larger buffers/backlogs available
+# so short packet bursts are less likely to turn into jitter under load.
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.core.rmem_default = 1048576
+net.core.wmem_default = 1048576
+net.core.netdev_max_backlog = 5000
+net.ipv4.udp_rmem_min = 8192
+net.ipv4.udp_wmem_min = 8192
+EOF
+sysctl --system >/dev/null
+
+# ---------------------------------------------------------------------------
 log "Configuring swap (${SWAP_SIZE_GB} GB)"
 if swapon --show | grep -q . ; then
   warn "Swap already present; skipping."
