@@ -46,7 +46,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ASA_START_PARAMS=TheIsland_WP?listen?Port=${ISLAND_GAME_PORT}?RCONPort=${ISLAND_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${ISLAND_GAME_PORT}:${ISLAND_GAME_PORT}/udp"
@@ -73,7 +73,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ASA_START_PARAMS=ScorchedEarth_WP?listen?Port=${SCORCHED_GAME_PORT}?RCONPort=${SCORCHED_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${SCORCHED_GAME_PORT}:${SCORCHED_GAME_PORT}/udp"
@@ -100,7 +100,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      - ASA_START_PARAMS=Genesis_WP?listen?Port=${GENESIS_GAME_PORT}?RCONPort=${GENESIS_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ASA_START_PARAMS=Genesis_WP?listen?Port=${GENESIS_GAME_PORT}?RCONPort=${GENESIS_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
     ports:
       - "0.0.0.0:${GENESIS_GAME_PORT}:${GENESIS_GAME_PORT}/udp"
@@ -128,7 +128,7 @@ services:
     stop_grace_period: 90s
 
     environment:
-      - ASA_START_PARAMS=LostColony_WP?listen?Port=${LOSTCOLONY_GAME_PORT}?RCONPort=${LOSTCOLONY_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -ActiveEvent=Summer -OlympicColors -NoBattlEye
+      - ASA_START_PARAMS=LostColony_WP?listen?Port=${LOSTCOLONY_GAME_PORT}?RCONPort=${LOSTCOLONY_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
       - ENABLE_DEBUG=0
 
     ports:
