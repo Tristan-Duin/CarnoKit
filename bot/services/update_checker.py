@@ -249,9 +249,11 @@ class UpdateChecker:
     async def _broadcast_all(self, message: str) -> None:
         for key in cfg.servers:
             try:
-                await self.bot.rcon_for(key).command(f"Broadcast {message}")
-            except Exception:
-                pass
+                rcon = self.bot.rcon_for(key)
+                await rcon.ensure_connected()
+                await rcon.command(self._server_chat_command(message))
+            except Exception as exc:
+                log.warning("Update broadcast failed for %s: %s", key, exc)
 
     async def _save_all(
         self,
@@ -261,17 +263,31 @@ class UpdateChecker:
         broadcast_message: str | None = None,
     ) -> None:
         log.info("Saving all worlds ...")
+        failures: list[str] = []
         for key in cfg.servers:
             try:
                 rcon = self.bot.rcon_for(key)
-                await rcon.command(
-                    f"Broadcast {broadcast_message or f'Server shutting down for {reason}. Saving world...'}"
-                )
+                await rcon.ensure_connected()
+                await rcon.command(self._server_chat_command(
+                    broadcast_message or f"Server shutting down for {reason}. Saving world..."
+                ))
                 await rcon.command("SaveWorld")
             except Exception as exc:
                 log.warning("SaveWorld failed for %s: %s", key, exc)
+                failures.append(f"{cfg.servers[key].name}: {exc}")
+
+        if failures:
+            raise RuntimeError(
+                "Aborting update because one or more worlds could not be saved: "
+                + "; ".join(failures)
+            )
+
         if flush_seconds > 0:
             await asyncio.sleep(flush_seconds)  # let saves flush
+
+    def _server_chat_command(self, message: str) -> str:
+        """Build the same cluster chat command used by /players broadcast."""
+        return f"ServerChat \"{message.replace(chr(34), chr(39))}\""
 
     async def _restart_all(self) -> None:
         """Restart every configured server container as one cluster operation."""
