@@ -84,7 +84,7 @@ def send_test_broadcast(target_port, rcon_password, test_msg):
 send_test_broadcast(port, password, f"Admin Test: RCON connection successful on the {map_name.upper()} container!")
 RCONEOF
   else
-    print f"    [WARNING] Missing port mapping for {m} in .env file."
+    echo "    [WARNING] Missing port mapping for ${m} in .env file."
   fi
 done
 

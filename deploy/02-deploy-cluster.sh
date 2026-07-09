@@ -24,9 +24,43 @@ set +a
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
 SERVER_UID=25000
 SERVER_GID=25000
+MAPS=(island scorched genesis lostcolony)
+
+require_env() {
+  local name="$1"
+  if [[ -z "${!name:-}" ]]; then
+    echo "Missing required setting ${name} in deploy/.env" >&2
+    exit 1
+  fi
+}
+
+validate_cluster_config() {
+  local services
+
+  echo "==> Validating 4-map cluster configuration"
+
+  require_env CLUSTER_ID
+  require_env ADMIN_PASSWORD
+  require_env MAX_PLAYERS
+
+  for srv in "${MAPS[@]}"; do
+    local upper
+    upper="$(echo "${srv}" | tr '[:lower:]' '[:upper:]')"
+    require_env "${upper}_GAME_PORT"
+    require_env "${upper}_RCON_PORT"
+  done
+
+  services="$(docker compose -p asa-cluster config --services)"
+  for srv in "${MAPS[@]}"; do
+    if ! printf '%s\n' "${services}" | grep -qx "asa-${srv}"; then
+      echo "Compose config is missing service asa-${srv}; refusing to start a partial cluster." >&2
+      exit 1
+    fi
+  done
+}
 
 echo "==> Ensuring data directories under ${BASE_DIR}"
-for srv in island scorched genesis lostcolony; do
+for srv in "${MAPS[@]}"; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -51,6 +85,8 @@ if ! docker info >/dev/null 2>&1; then
   echo "Cannot talk to Docker. Run this as root (sudo) or add your user to the 'docker' group." >&2
   exit 1
 fi
+
+validate_cluster_config
 
 echo "==> Starting the cluster (docker compose -p asa-cluster up -d --remove-orphans)"
 docker compose -p asa-cluster up -d --remove-orphans
