@@ -245,6 +245,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("PreventUploadDinos", "False"),
     ("NoTributeDownloads", "False"),
     ("AdminLogging", "False"),
+    ("PreventSpawnAnimations", "True"),
     ("ShowFloatingDamageText", "True"),
     ("AlwaysAllowStructurePickup", "True"),
     ("NonPermanentDiseases", "True"),
