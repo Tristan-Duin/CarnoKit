@@ -73,13 +73,13 @@ fi
 log "Configuring firewall (ufw)"
 # Allow SSH first so we don't lock ourselves out, then the game ports.
 ufw allow OpenSSH >/dev/null 2>&1 || ufw allow 22/tcp >/dev/null 2>&1 || true
-ufw allow 7777:7780/udp >/dev/null 2>&1 || true
-# RCON (27020-27023) is intentionally NOT opened; it is bound to localhost.
+ufw allow 7777:7781/udp >/dev/null 2>&1 || true
+# RCON (27020-27024) is intentionally NOT opened; it is bound to localhost.
 ufw --force enable
 
 # ---------------------------------------------------------------------------
 log "Creating cluster data directories under ${BASE_DIR}"
-for srv in island scorched genesis lostcolony; do
+for srv in island scorched genesis lostcolony aberration; do
   for sub in server-files steam steamcmd; do
     mkdir -p "${BASE_DIR}/${srv}/${sub}"
   done
@@ -93,6 +93,7 @@ chown -R "${SERVER_UID}:${SERVER_GID}" \
   "${BASE_DIR}/scorched" \
   "${BASE_DIR}/genesis" \
   "${BASE_DIR}/lostcolony" \
+  "${BASE_DIR}/aberration" \
   "${BASE_DIR}/cluster-shared"
 
 log "VPS setup complete."
@@ -101,8 +102,8 @@ cat <<EOF
 Next steps:
   1. Put this repo at ${BASE_DIR} (so you have ${BASE_DIR}/deploy, ${BASE_DIR}/bot, ...).
   2. cd ${BASE_DIR}/deploy && cp .env.example .env  then edit .env (passwords!).
-  3. bash 02-deploy-cluster.sh        # download + launch the 4 servers
+  3. bash 02-deploy-cluster.sh        # download + launch the 5 servers
   4. bash 03-setup-tooling.sh         # install + start the Discord bot + watchdog
 
-Reminder: ensure the VPS has >=130 GB free disk (4 separate server installs).
+Reminder: ensure the VPS has >=160 GB free disk (5 separate server installs).
 EOF

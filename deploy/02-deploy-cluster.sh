@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 02-deploy-cluster.sh - Download and launch the 4-map ASA cluster.
+# 02-deploy-cluster.sh - Download and launch the 5-map ASA cluster.
 #
 # Run from the deploy directory (after editing .env):
 #   bash deploy/02-deploy-cluster.sh
@@ -24,7 +24,7 @@ set +a
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
 SERVER_UID=25000
 SERVER_GID=25000
-MAPS=(island scorched genesis lostcolony)
+MAPS=(island scorched genesis lostcolony aberration)
 
 require_env() {
   local name="$1"
@@ -37,7 +37,7 @@ require_env() {
 validate_cluster_config() {
   local services
 
-  echo "==> Validating 4-map cluster configuration"
+  echo "==> Validating 5-map cluster configuration"
 
   require_env CLUSTER_ID
   require_env ADMIN_PASSWORD
@@ -75,6 +75,7 @@ if [[ "${EUID}" -eq 0 ]]; then
     "${BASE_DIR}/scorched" \
     "${BASE_DIR}/genesis" \
     "${BASE_DIR}/lostcolony" \
+    "${BASE_DIR}/aberration" \
     "${BASE_DIR}/cluster-shared"
 else
   echo "==> Not running as root; skipping ownership repair."
@@ -102,6 +103,7 @@ Follow progress:
   docker logs -f asa-scorched
   docker logs -f asa-genesis
   docker logs -f asa-lostcolony
+  docker logs -f asa-aberration
 
 Find the session name (once booted):
   docker exec asa-island cat server-files/ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini | grep SessionName

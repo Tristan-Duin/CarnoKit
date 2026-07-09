@@ -12,7 +12,7 @@
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
-MAPS="island scorched genesis lostcolony"
+MAPS="island scorched genesis lostcolony aberration"
 SERVER_UID=25000
 SERVER_GID=25000
 
@@ -190,6 +190,7 @@ for m in ${MAPS}; do
     scorched)     map_label="Scorched" ;;
     genesis)      map_label="Genesis 1" ;;
     lostcolony)   map_label="Lost Colony" ;;
+    aberration)   map_label="Aberration" ;;
     *)            map_label="${m}" ;;
   esac
 

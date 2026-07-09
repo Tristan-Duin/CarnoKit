@@ -17,7 +17,8 @@ cluster_id = arkcluster01
 # CurseForge mod IDs installed on every map:
 #   940975 = Cybers Structures QoL+ (Crossplay)
 #   929169 = Configurable Cryopods
-mods = 940975,929169
+#   928548 = Shiny! Dinos Ascended
+mods = 940975,929169,928548
 
 # RCON + admin password (must match deploy/.env ADMIN_PASSWORD). CHANGE THIS.
 admin_password = CHANGE_ME
@@ -66,7 +67,7 @@ log_file = /opt/asa-cluster/watchdog.log
 log_days = 30
 
 [servers]
-list = island,scorched,genesis,lostcolony
+list = island,scorched,genesis,lostcolony,aberration
 
 [server.island]
 name = The Island
@@ -99,3 +100,11 @@ game_port = 7780
 rcon_port = 27023
 container = asa-lostcolony
 log_file = /opt/asa-cluster/lostcolony/server-files/ShooterGame/Saved/Logs/ShooterGame.log
+
+[server.aberration]
+name = Aberration
+map = Aberration_WP
+game_port = 7781
+rcon_port = 27024
+container = asa-aberration
+log_file = /opt/asa-cluster/aberration/server-files/ShooterGame/Saved/Logs/ShooterGame.log

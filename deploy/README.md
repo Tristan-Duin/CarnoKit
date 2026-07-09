@@ -1,16 +1,17 @@
-# ARK: Survival Ascended - 4-Map Cluster on a VPS
+# ARK: Survival Ascended - 5-Map Cluster on a VPS
 
 This repo deploys a clustered **ARK: Survival Ascended** server (The Island,
-Scorched Earth, Genesis 1, Lost Colony) on an Ubuntu VPS using Docker, with the
-Discord bot, watchdog, crash analyzer, and auto-updater tooling.
+Scorched Earth, Genesis 1, Lost Colony, Aberration) on an Ubuntu VPS using
+Docker, with the Discord bot, watchdog, crash analyzer, and auto-updater
+tooling.
 
 The ASA dedicated server is Windows-only; on Linux it runs inside the
 maintained `mschnitzer/asa-linux-server` image via Proton.
 
 ## What you get
-- 4 clustered maps sharing characters/dinos (one `cluster-shared` volume).
+- 5 clustered maps sharing characters/dinos (one `cluster-shared` volume).
 - Mods on every map: Cybers Structures QoL+ (`940975`), Configurable
-  Cryopods (`929169`)
+  Cryopods (`929169`), Shiny! Dinos Ascended (`928548`)
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
   `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.
@@ -19,7 +20,7 @@ maintained `mschnitzer/asa-linux-server` image via Proton.
 ## Requirements
 - Ubuntu 24.04 LTS (22.04 also works) x86_64 VPS.
 - **64 GB+ RAM** (each map uses ~13 GB).
-- **>= 100 GB free disk** (each map is a separate ~30 GB install).
+- **>= 160 GB free disk** (each map is a separate ~30 GB install).
 - Root/sudo access.
 
 ## Layout (on the VPS)
@@ -30,7 +31,7 @@ Put this repo at `/opt/asa-cluster` so you have:
   bot/  watchdog/  crash_analyzer/
   deploy/               # the scripts below + docker-compose.yml + .env
   venv/                 # created by 03-setup-tooling.sh
-  island/  scorched/  genesis/  lostcolony/  # per-map data
+  island/  scorched/  genesis/  lostcolony/  aberration/  # per-map data
   cluster-shared/       # cross-map transfers
 ```
 > The default base directory is `/opt/asa-cluster`. If you deploy elsewhere,
@@ -74,6 +75,7 @@ Put this repo at `/opt/asa-cluster` so you have:
 | Scorched Earth| 7778       | 27021                      |
 | Genesis 1     | 7779       | 27022                      |
 | Lost Colony   | 7780       | 27023                      |
+| Aberration    | 7781       | 27024                      |
 
 Only the game UDP ports are opened to the internet (by `01-setup-vps.sh`).
 RCON is published on `127.0.0.1` only and used by the local tooling. ASA has
@@ -149,8 +151,9 @@ breeding, official wild level 150**, plus QoL and the mod settings:
   Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
   replaced by the CS versions so you don't get duplicates).
 - Server-list names: each map advertises as `Battling Poverty [Island]`,
-  `Battling Poverty [Scorched]`, `Battling Poverty [Genesis 1]`, and
-  `Battling Poverty [Lost Colony]` (the prefix is `CLUSTER_NAME` in the script).
+  `Battling Poverty [Scorched]`, `Battling Poverty [Genesis 1]`,
+  `Battling Poverty [Lost Colony]`, and `Battling Poverty [Aberration]`
+  (the prefix is `CLUSTER_NAME` in the script).
 Run it (idempotent - edit the values in the script and re-run anytime):
 ```bash
 sudo bash /opt/asa-cluster/deploy/04-apply-rates.sh
@@ -168,4 +171,4 @@ For a join password, set `ServerPassword` in each map's `GameUserSettings.ini`
   open at the VPS firewall *and* provider security group.
 - **Bot/watchdog can't reach RCON**: confirm the container is past first boot,
   and that `admin_password` (config.ini) == `ADMIN_PASSWORD` (.env).
-- **Out of disk**: 4 installs are large; check `df -h`.
+- **Out of disk**: 5 installs are large; check `df -h`.
