@@ -247,6 +247,7 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("ShowFloatingDamageText", "True"),
     ("AlwaysAllowStructurePickup", "True"),
     ("NonPermanentDiseases", "True"),
+    ("AllowCryoPodsOnLand", "True"),
     ("DinoCountMultiplier", "0.9"),
     ("AutoSavePeriodMinutes", "15.0"),
     ("ResourceNoReplenishRadiusStructures", "0.5"),
