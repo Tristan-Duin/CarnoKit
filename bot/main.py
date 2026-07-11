@@ -107,23 +107,33 @@ class ArkBot(commands.Bot):
         # Global slash commands can take time to appear in Discord. If the bot
         # is locked to a configured channel, sync commands directly to that
         # channel's guild too so new commands are available there immediately.
-        if cfg.channel_id:
-            try:
+        try:
+            guilds_to_sync: list[discord.Guild] = []
+            if cfg.channel_id:
                 channel = self.get_channel(cfg.channel_id) or await self.fetch_channel(cfg.channel_id)
                 guild = getattr(channel, "guild", None)
                 if guild:
-                    guild_obj = discord.Object(id=guild.id)
-                    self.tree.copy_global_to(guild=guild_obj)
-                    guild_synced = await self.tree.sync(guild=guild_obj)
-                    log.info(
-                        "Synced %d guild slash commands to %s (%s): %s",
-                        len(guild_synced),
-                        guild.name,
-                        guild.id,
-                        ", ".join(cmd.name for cmd in guild_synced) or "(none)",
-                    )
-            except Exception as exc:
-                log.warning("Guild slash command sync failed: %s", exc)
+                    guilds_to_sync.append(guild)
+            if not guilds_to_sync:
+                guilds_to_sync = list(self.guilds)
+
+            seen_guilds: set[int] = set()
+            for guild in guilds_to_sync:
+                if guild.id in seen_guilds:
+                    continue
+                seen_guilds.add(guild.id)
+                guild_obj = discord.Object(id=guild.id)
+                self.tree.copy_global_to(guild=guild_obj)
+                guild_synced = await self.tree.sync(guild=guild_obj)
+                log.info(
+                    "Synced %d guild slash commands to %s (%s): %s",
+                    len(guild_synced),
+                    guild.name,
+                    guild.id,
+                    ", ".join(cmd.name for cmd in guild_synced) or "(none)",
+                )
+        except Exception as exc:
+            log.warning("Guild slash command sync failed: %s", exc)
 
         # Global error handler for slash commands.
         @self.tree.error
