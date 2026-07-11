@@ -56,6 +56,7 @@ All settings live in `config.ini` at the project root. Each tool reads only the 
 | `[discord]` | Bot | `token` |
 | `[steamcmd]` | Bot | `path` |
 | `[scheduler]` | Bot | (all optional) |
+| `[boss]` | Bot | (all optional) |
 | `[watchdog]` | Watchdog | (all optional) |
 
 See `config.example.ini` for all available settings with descriptions.
@@ -107,6 +108,17 @@ See `config.example.ini` for all available settings with descriptions.
 
 The bot and shipped map profile both default to 15-minute auto-saves:
 `auto_save_minutes = 15` and `AutoSavePeriodMinutes=15.0`.
+
+### Boss
+| Command | Description | Permission |
+|---|---|---|
+| `/boss start <hours> [title] [emoji]` | Start a boss fight countdown and reaction signup roster | Everyone |
+| `/boss list` | Show active boss fight countdowns | Everyone |
+
+Players join by reacting with the configured emoji on the countdown message.
+Removing that reaction removes them from the displayed roster. When the timer
+starts, the bot pings the Surviver role and keeps the countdown embed refreshed.
+When the timer ends, the bot DMs every signed-up player that it is boss fight time.
 
 ### Updates
 | Command | Description | Permission |

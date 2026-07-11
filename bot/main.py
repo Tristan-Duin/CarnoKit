@@ -35,6 +35,7 @@ EXTENSIONS = [
     "cogs.admin",
     "cogs.updater",
     "cogs.logs",
+    "cogs.boss",
 ]
 
 
@@ -56,6 +57,7 @@ class ArkBot(commands.Bot):
 
     def __init__(self) -> None:
         intents = discord.Intents.default()
+        intents.reactions = True
         super().__init__(command_prefix="!", intents=intents, tree_cls=ArkCommandTree)
 
         # One shared RCON client per server (created once, used by all cogs).

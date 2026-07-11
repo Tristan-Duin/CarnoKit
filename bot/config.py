@@ -94,6 +94,9 @@ class Settings:
         self.schedule_file = Path(cp.get("scheduler", "schedule_file", fallback="schedules.json"))
         self.auto_save_minutes = cp.getint("scheduler", "auto_save_minutes", fallback=15)
 
+        # [boss]
+        self.boss_countdown_file = Path(cp.get("boss", "countdown_file", fallback="boss_countdowns.json"))
+
         # [servers] + [server.<key>]
         self.servers: Dict[str, ServerConfig] = {}
         raw_list = cp.get("servers", "list", fallback="")

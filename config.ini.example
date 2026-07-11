@@ -54,6 +54,11 @@ update_countdown_minutes = 30
 schedule_file = schedules.json
 auto_save_minutes = 15
 
+[boss]
+# Active boss fight countdown signups. The bot keeps this so restarts do not
+# lose the reaction roster before the countdown ends.
+countdown_file = boss_countdowns.json
+
 [watchdog]
 poll_seconds = 30
 fail_threshold = 3
