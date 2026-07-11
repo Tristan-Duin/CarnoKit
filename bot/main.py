@@ -97,7 +97,33 @@ class ArkBot(commands.Bot):
 
     async def on_ready(self) -> None:
         synced = await self.tree.sync()
-        log.info("Bot online as %s - synced %d slash commands.", self.user, len(synced))
+        log.info(
+            "Bot online as %s - synced %d global slash commands: %s",
+            self.user,
+            len(synced),
+            ", ".join(cmd.name for cmd in synced) or "(none)",
+        )
+
+        # Global slash commands can take time to appear in Discord. If the bot
+        # is locked to a configured channel, sync commands directly to that
+        # channel's guild too so new commands are available there immediately.
+        if cfg.channel_id:
+            try:
+                channel = self.get_channel(cfg.channel_id) or await self.fetch_channel(cfg.channel_id)
+                guild = getattr(channel, "guild", None)
+                if guild:
+                    guild_obj = discord.Object(id=guild.id)
+                    self.tree.copy_global_to(guild=guild_obj)
+                    guild_synced = await self.tree.sync(guild=guild_obj)
+                    log.info(
+                        "Synced %d guild slash commands to %s (%s): %s",
+                        len(guild_synced),
+                        guild.name,
+                        guild.id,
+                        ", ".join(cmd.name for cmd in guild_synced) or "(none)",
+                    )
+            except Exception as exc:
+                log.warning("Guild slash command sync failed: %s", exc)
 
         # Global error handler for slash commands.
         @self.tree.error
