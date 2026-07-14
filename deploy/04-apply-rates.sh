@@ -261,9 +261,7 @@ if session_name:
 
 desired["ConfigurableCryopods"] = collections.OrderedDict([
     ("PreventCryoSickness", "True"),
-    # Keep the mod on ARK's normal capture/deploy path.  The permissive
-    # variants bypass creature/arena restrictions and can skip the normal
-    # inventory-drop handling used when inventory retention is disabled.
+    # Keep ARK's creature restrictions while allowing the mod's cryogun.
     ("CanAlwaysCapture", "False"),
     ("PlatformSaddleTimer", "True"),
     ("MaxBossLimit", "0"),
@@ -276,7 +274,8 @@ desired["ConfigurableCryopods"] = collections.OrderedDict([
     ("AllowTribeLogs", "False"),
     ("AllowCuddleReroll", "True"),
     ("PreventCaveCryo", "False"),
-    ("EnableCryoRifle", "False"),
+    # Despite its name, this shared setting enables both the cryogun and rifle.
+    ("EnableCryoRifle", "True"),
 ])
 
 desired["CybersStructures"] = collections.OrderedDict([

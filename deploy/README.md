@@ -149,8 +149,8 @@ breeding, official wild level 150**, plus QoL and the mod settings:
 - Rates: XP 3x, Harvest 3x, Taming 5x, faster resource respawn, 5x item stacks.
 - Breeding: ~15x maturation, 10x hatch, lower cuddle interval, slower baby food drain.
 - PvE: structure/dino decay off, flyer carry, cave building, cluster transfers enabled.
-- Mods: Configurable Cryopods tuned (no cryo sickness, boss-arena deployment
-  disabled, normal capture path so creature inventories drop in bags) and
+- Mods: Configurable Cryopods tuned (no cryo sickness, cryogun enabled,
+  boss-arena deployment disabled, creature inventories drop in bags) and
   Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
   replaced by the CS versions so you don't get duplicates).
 - Server-list names: each map advertises as `Battling Poverty [Island]`,
