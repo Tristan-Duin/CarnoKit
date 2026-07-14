@@ -261,19 +261,22 @@ if session_name:
 
 desired["ConfigurableCryopods"] = collections.OrderedDict([
     ("PreventCryoSickness", "True"),
-    ("CanAlwaysCapture", "True"),
+    # Keep the mod on ARK's normal capture/deploy path.  The permissive
+    # variants bypass creature/arena restrictions and can skip the normal
+    # inventory-drop handling used when inventory retention is disabled.
+    ("CanAlwaysCapture", "False"),
     ("PlatformSaddleTimer", "True"),
-    ("MaxBossLimit", "50"),
+    ("MaxBossLimit", "0"),
     ("CryoSpeed", "0.2"),
     ("OwnerCryoOnly", "False"),
-    ("RestrictedCryoDeploy", "True"),
+    ("RestrictedCryoDeploy", "False"),
     ("CryoRestrictedItems", "False"),
     ("CryoInventoryItems", "False"),
-    ("BossIgnoreDragWeight", "True"),
+    ("BossIgnoreDragWeight", "False"),
     ("AllowTribeLogs", "False"),
     ("AllowCuddleReroll", "True"),
     ("PreventCaveCryo", "False"),
-    ("EnableCryoRifle", "True"),
+    ("EnableCryoRifle", "False"),
 ])
 
 desired["CybersStructures"] = collections.OrderedDict([
