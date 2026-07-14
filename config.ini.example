@@ -14,7 +14,8 @@ base_dir = /opt/asa-cluster
 compose_project = asa-cluster
 cluster_id = arkcluster01
 
-# CurseForge mod IDs installed on every map:
+# CurseForge project IDs installed on every map. ASA resolves current releases
+# at server startup; these are project IDs, not version-specific file IDs.
 #   940975 = Cybers Structures QoL+ (Crossplay)
 #   929169 = Configurable Cryopods
 #   928548 = Shiny! Dinos Ascended
@@ -72,7 +73,7 @@ log_file = /opt/asa-cluster/watchdog.log
 log_days = 30
 
 [servers]
-list = island,scorched,genesis,lostcolony,aberration
+list = island,scorched,genesis,lostcolony
 
 [server.island]
 name = The Island
@@ -105,11 +106,3 @@ game_port = 7780
 rcon_port = 27023
 container = asa-lostcolony
 log_file = /opt/asa-cluster/lostcolony/server-files/ShooterGame/Saved/Logs/ShooterGame.log
-
-[server.aberration]
-name = Aberration
-map = Aberration_WP
-game_port = 7781
-rcon_port = 27024
-container = asa-aberration
-log_file = /opt/asa-cluster/aberration/server-files/ShooterGame/Saved/Logs/ShooterGame.log

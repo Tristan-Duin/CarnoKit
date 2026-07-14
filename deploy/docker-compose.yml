@@ -1,6 +1,6 @@
-# ARK: Survival Ascended - 5-map cluster
+# ARK: Survival Ascended - 4-map cluster
 #
-# Runs The Island, Scorched Earth, Genesis 1, Lost Colony, and Aberration as
+# Runs The Island, Scorched Earth, Genesis 1, and Lost Colony as
 # clustered containers using the maintained mschnitzer/asa-linux-server image
 # (Windows server binary via Proton). All tunables come from the sibling .env
 # file.
@@ -8,7 +8,7 @@
 # Start with:   docker compose -p asa-cluster up -d   (see 02-deploy-cluster.sh)
 #
 # Ports: game ports are published on all interfaces (players connect to
-# UDP 7777-7781). RCON is published ONLY on 127.0.0.1 so the bot/watchdog
+# UDP 7777-7780). RCON is published ONLY on 127.0.0.1 so the bot/watchdog
 # can reach it locally - it is never exposed to the internet.
 #
 # NOTE: ServerAdminPassword is intentionally the LAST ?option. ARK reads a
@@ -26,7 +26,7 @@ services:
       - -c
       - |
         set -eu
-        for srv in island scorched genesis lostcolony aberration; do
+        for srv in island scorched genesis lostcolony; do
           mkdir -p "/data/$${srv}/server-files" "/data/$${srv}/steam/compatibilitytools.d" "/data/$${srv}/steamcmd"
           chown -R 25000:25000 "/data/$${srv}"
         done
@@ -140,38 +140,6 @@ services:
       - ${BASE_DIR}/lostcolony/steam:/home/gameserver/Steam:rw
       - ${BASE_DIR}/lostcolony/steamcmd:/home/gameserver/steamcmd:rw
       - ${BASE_DIR}/lostcolony/server-files:/home/gameserver/server-files:rw
-      - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
-      - /etc/localtime:/etc/localtime:ro
-
-    depends_on:
-      asa-permissions:
-        condition: service_completed_successfully
-
-    networks:
-      - asa-network
-
-  asa-aberration:
-    image: mschnitzer/asa-linux-server:latest
-    container_name: asa-aberration
-    hostname: asa-aberration
-    entrypoint: "/usr/bin/start_server"
-    user: gameserver
-    tty: true
-    restart: unless-stopped
-    stop_grace_period: 90s
-
-    environment:
-      - ASA_START_PARAMS=Aberration_WP?listen?Port=${ABERRATION_GAME_PORT}?RCONPort=${ABERRATION_RCON_PORT}?RCONEnabled=True?MaxPlayers=${MAX_PLAYERS}?ServerAdminPassword=${ADMIN_PASSWORD} -WinLiveMaxPlayers=${MAX_PLAYERS} -clusterid=${CLUSTER_ID} -ClusterDirOverride="/home/gameserver/cluster-shared" -NoTransferFromFiltering -mods=${MODS} -NoBattlEye
-      - ENABLE_DEBUG=0
-
-    ports:
-      - "0.0.0.0:${ABERRATION_GAME_PORT}:${ABERRATION_GAME_PORT}/udp"
-      - "127.0.0.1:${ABERRATION_RCON_PORT}:${ABERRATION_RCON_PORT}/tcp"
-
-    volumes:
-      - ${BASE_DIR}/aberration/steam:/home/gameserver/Steam:rw
-      - ${BASE_DIR}/aberration/steamcmd:/home/gameserver/steamcmd:rw
-      - ${BASE_DIR}/aberration/server-files:/home/gameserver/server-files:rw
       - ${BASE_DIR}/cluster-shared:/home/gameserver/cluster-shared:rw
       - /etc/localtime:/etc/localtime:ro
 
