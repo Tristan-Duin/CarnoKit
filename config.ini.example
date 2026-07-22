@@ -69,6 +69,10 @@ cooldown_minutes = 30
 max_memory_mb = 0
 memory_poll_seconds = 60
 memory_restart_countdown_minutes = 5
+# Lost Colony can take 6+ minutes to validate files and load its save/mods.
+# This must exceed the slowest map's full startup time or the watchdog will
+# repeatedly kill a healthy server before RCON becomes available.
+boot_grace_seconds = 600
 log_file = /opt/asa-cluster/watchdog.log
 log_days = 30
 

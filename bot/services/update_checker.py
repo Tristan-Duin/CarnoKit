@@ -12,8 +12,11 @@ container - the server image re-runs SteamCMD on start, pulling the update.
 from __future__ import annotations
 
 import asyncio
+import html
+import json
 import logging
 import re
+import urllib.request
 from typing import Optional
 
 import discord
@@ -29,6 +32,10 @@ log = logging.getLogger(__name__)
 _WARN_SCHEDULE = [1800, 900, 300, 60]
 _FINAL_SAVE_FLUSH_SECONDS = 20
 _SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
+_PATCH_NOTES_URL = (
+    "https://survivetheark.com/index.php?/forums/topic/"
+    "708761-asa-pc-patch-notes/"
+)
 
 
 class UpdateChecker:
@@ -41,6 +48,7 @@ class UpdateChecker:
         self.current_build: str = ""
         self.installed_builds: dict[str, str] = {}
         self.latest_build: Optional[str] = None
+        self.patch_notes: dict[str, object] | None = None
         self.installed_mods: dict[str, list[str]] = {}
         self.missing_mods: dict[str, list[str]] = {}
         self._enabled = True
@@ -67,6 +75,10 @@ class UpdateChecker:
         self.installed_mods = {}
         self.missing_mods = {}
         self.latest_build = await self._fetch_latest_build()
+        if self.has_game_update():
+            self.patch_notes = await asyncio.to_thread(self._fetch_patch_notes)
+        else:
+            self.patch_notes = None
         return self.current_build, self.latest_build
 
     def has_game_update(self) -> bool:
@@ -209,6 +221,96 @@ class UpdateChecker:
         m = re.search(r'"buildid"\s+"(\d+)"', region)
         return m.group(1) if m else None
 
+    def _fetch_patch_notes(self) -> dict[str, object] | None:
+        """Fetch a short summary of the latest official ASA PC patch notes."""
+        request = urllib.request.Request(
+            _PATCH_NOTES_URL,
+            headers={"User-Agent": "CarnoKit/1.0 (+ARK update announcements)"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                raw_page = response.read()
+                charset = response.headers.get_content_charset() or "utf-8"
+                page = raw_page.decode(charset, errors="replace")
+                # The forum occasionally serves Windows-1252 punctuation while
+                # declaring UTF-8. Prefer readable notes over replacement chars.
+                if "�" in page:
+                    page = raw_page.decode("windows-1252", errors="replace")
+        except Exception as exc:
+            log.warning("Could not fetch official ARK patch notes: %s", exc)
+            return None
+
+        match = re.search(
+            r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+            page,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if not match:
+            log.warning("Official ARK patch notes did not contain JSON-LD data.")
+            return None
+
+        try:
+            data = json.loads(match.group(1))
+        except (TypeError, ValueError) as exc:
+            log.warning("Could not parse official ARK patch notes: %s", exc)
+            return None
+
+        article = self._find_patch_article(data)
+        if not article:
+            return None
+
+        raw_text = html.unescape(str(article.get("text", "")))
+        lines = [re.sub(r"\s+", " ", line).strip(" \t-•") for line in raw_text.splitlines()]
+        lines = [line for line in lines if line]
+        start = next((i for i, line in enumerate(lines) if re.match(r"^v\d", line, re.I)), None)
+        if start is None:
+            return None
+
+        heading = lines[start]
+        section: list[str] = []
+        for line in lines[start + 1:]:
+            if re.match(r"^v\d", line, re.I):
+                break
+            if len(line) < 4 or line.lower().startswith("you’ll also find"):
+                continue
+            section.append(line)
+
+        action_prefixes = (
+            "added ", "adjusted ", "fixed ", "improved ", "increased ",
+            "new ", "optimized ", "prevented ", "reduced ", "removed ",
+            "updated ",
+        )
+        changes = [
+            line for line in section
+            if line.lower().startswith(action_prefixes)
+        ][:6]
+        if not changes:
+            changes = section[:6]
+
+        if not changes:
+            return None
+        return {
+            "title": heading,
+            "changes": changes,
+            "url": str(article.get("url") or _PATCH_NOTES_URL),
+        }
+
+    def _find_patch_article(self, value: object) -> dict[str, object] | None:
+        """Find the article-shaped object within the forum page's JSON-LD."""
+        if isinstance(value, dict):
+            if value.get("text") and value.get("headline"):
+                return value
+            for child in value.values():
+                found = self._find_patch_article(child)
+                if found:
+                    return found
+        elif isinstance(value, list):
+            for child in value:
+                found = self._find_patch_article(child)
+                if found:
+                    return found
+        return None
+
     # ── Update cycle steps ────────────────────────────────────────────────
 
     async def _countdown(self, total_seconds: int, reason: str = "update") -> None:
@@ -225,9 +327,12 @@ class UpdateChecker:
             remaining = warn_at
             label = countdown_label(remaining)
             msg = f"{self._reason_label(reason)} in {label}. Please find a safe spot!"
+            notes = self.patch_notes if warn_at == 900 else None
+            if notes:
+                msg += " Patch notes are posted in Discord."
             await self._broadcast_all(msg)
             await self._post_alert(
-                embeds.update_countdown(remaining, reason),
+                embeds.update_countdown(remaining, reason, patch_notes=notes),
                 content=_SURVIVER_ROLE_MENTION,
             )
             if warn_at == 60:

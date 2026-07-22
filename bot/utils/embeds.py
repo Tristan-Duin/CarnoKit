@@ -159,14 +159,32 @@ def update_available(
     return embed
 
 
-def update_countdown(seconds_left: int, reason: str = "update") -> discord.Embed:
+def update_countdown(
+    seconds_left: int,
+    reason: str = "update",
+    *,
+    patch_notes: dict[str, object] | None = None,
+) -> discord.Embed:
     label = countdown_label(seconds_left)
     reason_label = reason[:1].upper() + reason[1:]
-    return discord.Embed(
+    embed = discord.Embed(
         title=f"{reason_label} in {label}",
         description=f"The server will save and shut down for a {reason} in **{label}**.",
         color=COLOR_WARN,
-    ).set_footer(text=_ts())
+    )
+    if patch_notes:
+        title = str(patch_notes.get("title") or "Latest patch notes")
+        changes = patch_notes.get("changes") or []
+        summary = "\n".join(f"• {change}" for change in changes)
+        embed.add_field(
+            name=truncate(title, 256),
+            value=truncate(summary, 1000),
+            inline=False,
+        )
+        url = str(patch_notes.get("url") or "")
+        if url:
+            embed.add_field(name="Full Changelog", value=f"[View official patch notes]({url})", inline=False)
+    return embed.set_footer(text=_ts())
 
 
 def update_status(
