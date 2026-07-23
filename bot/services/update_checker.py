@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 # Standard countdown warning schedule (seconds before shutdown).
 _WARN_SCHEDULE = [1800, 900, 300, 60]
 _FINAL_SAVE_FLUSH_SECONDS = 20
-_SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
+_ARK_ROLE_MENTION = "<@&1526687172609179790>"
 _PATCH_NOTES_URL = (
     "https://survivetheark.com/index.php?/forums/topic/"
     "708761-asa-pc-patch-notes/"
@@ -333,7 +333,7 @@ class UpdateChecker:
             await self._broadcast_all(msg)
             await self._post_alert(
                 embeds.update_countdown(remaining, reason, patch_notes=notes),
-                content=_SURVIVER_ROLE_MENTION,
+                content=_ARK_ROLE_MENTION,
             )
             if warn_at == 60:
                 await self._save_all(

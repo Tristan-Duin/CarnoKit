@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 _RESTART_WARNINGS = [1800, 900, 300, 60]
 _FINAL_SAVE_FLUSH_SECONDS = 20
-_SURVIVER_ROLE_MENTION = "<@&771480650581540884>"
+_ARK_ROLE_MENTION = "<@&1526687172609179790>"
 
 
 class _Schedule:
@@ -296,7 +296,7 @@ class SchedulerCog(commands.GroupCog, group_name="schedule"):
             return
         try:
             await ch.send(
-                content=_SURVIVER_ROLE_MENTION,
+                content=_ARK_ROLE_MENTION,
                 embed=embeds.update_countdown(seconds_left, "scheduled restart"),
                 allowed_mentions=discord.AllowedMentions(roles=True),
             )
