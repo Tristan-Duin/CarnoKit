@@ -12,12 +12,12 @@
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
-MAPS="island scorched genesis lostcolony"
+MAPS="aberration ragnarok genesis lostcolony"
 SERVER_UID=25000
 SERVER_GID=25000
 
 # Server-list name prefix; each map appends its label, e.g.
-# "Battling Poverty [Island]". Edit this to rename every server at once.
+# "Battling Poverty [Aberration]". Edit this to rename every server at once.
 CLUSTER_NAME="${CLUSTER_NAME:-Battling Poverty}"
 
 CFG_REL="server-files/ShooterGame/Saved/Config/WindowsServer"
@@ -74,7 +74,7 @@ fi
 echo "==> Warning players and issuing safe-saves across the cluster..."
 
 for m in ${MAPS}; do
-  # Dynamically build and read the variable name from your .env file (e.g., ISLAND_RCON_PORT)
+  # Dynamically build and read the variable name from your .env file (e.g., ABERRATION_RCON_PORT)
   UPPER_MAP=$(echo "${m}" | tr '[:lower:]' '[:upper:]')
   PORT_VAR="${UPPER_MAP}_RCON_PORT"
   
@@ -184,10 +184,10 @@ for m in ${MAPS}; do
 
   printf '%s\n' "${GAME_INI}" > "${cfg}/Game.ini"
 
-  # Per-map server-list name: "Battling Poverty [Island]" etc.
+  # Per-map server-list name: "Battling Poverty [Aberration]" etc.
   case "${m}" in
-    island)       map_label="Island" ;;
-    scorched)     map_label="Scorched" ;;
+    aberration)   map_label="Aberration" ;;
+    ragnarok)     map_label="Ragnarok" ;;
     genesis)      map_label="Genesis 1" ;;
     lostcolony)   map_label="Lost Colony" ;;
     *)            map_label="${m}" ;;
@@ -195,13 +195,14 @@ for m in ${MAPS}; do
 
   session_name="${CLUSTER_NAME} [${map_label}]"
 
-  python3 - "${cfg}/GameUserSettings.ini" "${session_name}" <<'PYEOF'
+  python3 - "${cfg}/GameUserSettings.ini" "${session_name}" "${m}" <<'PYEOF'
 import collections
 import re
 import sys
 
 path = sys.argv[1]
 session_name = sys.argv[2] if len(sys.argv) > 2 else ""
+map_key = sys.argv[3] if len(sys.argv) > 3 else ""
 
 desired = collections.OrderedDict()
 
@@ -253,6 +254,15 @@ desired["ServerSettings"] = collections.OrderedDict([
     ("AutoSavePeriodMinutes", "15.0"),
     ("ResourceNoReplenishRadiusStructures", "0.5"),
 ])
+
+# Aberration's progression and traversal depend on its no-flyer rules. Allow
+# all cluster dino transfers, including flyers, but do not permit riding/flying
+# them on Aberration and explicitly leave cave flying disabled.
+if map_key == "aberration":
+    desired["ServerSettings"]["AllowFlyerCarryPvE"] = "False"
+    desired["ServerSettings"]["CrossARKAllowForeignDinoDownloads"] = "True"
+    desired["ServerSettings"]["ForceAllowCaveFlyers"] = "False"
+    desired["ServerSettings"]["bForceCanRideFliers"] = "False"
 
 if session_name:
     desired["SessionSettings"] = collections.OrderedDict([

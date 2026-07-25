@@ -107,7 +107,7 @@ class Settings:
             self.servers[key] = ServerConfig(
                 key=key,
                 name=cp.get(section, "name", fallback=key),
-                map=cp.get(section, "map", fallback="TheIsland_WP"),
+                map=cp.get(section, "map", fallback="Aberration_WP"),
                 game_port=cp.getint(section, "game_port", fallback=7777),
                 rcon_port=cp.getint(section, "rcon_port", fallback=27020),
                 container=cp.get(section, "container", fallback=f"asa-{key}"),

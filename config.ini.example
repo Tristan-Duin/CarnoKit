@@ -77,23 +77,23 @@ log_file = /opt/asa-cluster/watchdog.log
 log_days = 30
 
 [servers]
-list = island,scorched,genesis,lostcolony
+list = aberration,ragnarok,genesis,lostcolony
 
-[server.island]
-name = The Island
-map = TheIsland_WP
+[server.aberration]
+name = Aberration
+map = Aberration_WP
 game_port = 7777
 rcon_port = 27020
-container = asa-island
-log_file = /opt/asa-cluster/island/server-files/ShooterGame/Saved/Logs/ShooterGame.log
+container = asa-aberration
+log_file = /opt/asa-cluster/aberration/server-files/ShooterGame/Saved/Logs/ShooterGame.log
 
-[server.scorched]
-name = Scorched Earth
-map = ScorchedEarth_WP
+[server.ragnarok]
+name = Ragnarok
+map = Ragnarok_WP
 game_port = 7778
 rcon_port = 27021
-container = asa-scorched
-log_file = /opt/asa-cluster/scorched/server-files/ShooterGame/Saved/Logs/ShooterGame.log
+container = asa-ragnarok
+log_file = /opt/asa-cluster/ragnarok/server-files/ShooterGame/Saved/Logs/ShooterGame.log
 
 [server.genesis]
 name = Genesis 1

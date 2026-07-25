@@ -1,7 +1,7 @@
 # ARK: Survival Ascended - 4-Map Cluster on a VPS
 
-This repo deploys a clustered **ARK: Survival Ascended** server (The Island,
-Scorched Earth, Genesis 1, and Lost Colony) on an Ubuntu VPS using
+This repo deploys a clustered **ARK: Survival Ascended** server (Aberration,
+Ragnarok, Genesis 1, and Lost Colony) on an Ubuntu VPS using
 Docker, with the Discord bot, watchdog, crash analyzer, and auto-updater
 tooling.
 
@@ -15,6 +15,8 @@ maintained `mschnitzer/asa-linux-server` image via Proton.
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
   `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.
+- A systemd shutdown guard that saves every reachable world before the VPS or
+  Docker shuts the containers down.
 - A crash analyzer and a SteamCMD-based auto-updater.
 
 ## Requirements
@@ -31,7 +33,7 @@ Put this repo at `/opt/asa-cluster` so you have:
   bot/  watchdog/  crash_analyzer/
   deploy/               # the scripts below + docker-compose.yml + .env
   venv/                 # created by 03-setup-tooling.sh
-  island/  scorched/  genesis/  lostcolony/  # per-map data
+  aberration/  ragnarok/  genesis/  lostcolony/  # per-map data
   cluster-shared/       # cross-map transfers
 ```
 > The default base directory is `/opt/asa-cluster`. If you deploy elsewhere,
@@ -62,7 +64,7 @@ Put this repo at `/opt/asa-cluster` so you have:
    sudo bash /opt/asa-cluster/deploy/02-deploy-cluster.sh
    ```
    First boot is slow (SteamCMD download + Proton + mod download): 10-30+ min
-   per map. Watch with `docker logs -f asa-island`.
+   per map. Watch with `docker logs -f asa-aberration`.
 5. **Install the tooling** (bot + watchdog as systemd services):
    ```bash
    sudo bash /opt/asa-cluster/deploy/03-setup-tooling.sh
@@ -71,8 +73,8 @@ Put this repo at `/opt/asa-cluster` so you have:
 ## Ports
 | Map           | Game (UDP) | RCON (TCP, localhost only) |
 | ------------- | ---------- | -------------------------- |
-| The Island    | 7777       | 27020                      |
-| Scorched Earth| 7778       | 27021                      |
+| Aberration    | 7777       | 27020                      |
+| Ragnarok      | 7778       | 27021                      |
 | Genesis 1     | 7779       | 27022                      |
 | Lost Colony   | 7780       | 27023                      |
 
@@ -84,11 +86,13 @@ no separate query port.
 ```bash
 # Status / logs
 docker ps
-docker logs -f asa-island
+docker logs -f asa-aberration
 
-# Stop / start / restart one map or all
-docker compose -p asa-cluster restart asa-island
-cd /opt/asa-cluster/deploy && docker compose -p asa-cluster down
+# Save before every stop/restart. Restart one map, or stop all:
+sudo /opt/asa-cluster/deploy/safe-shutdown.sh restart asa-aberration
+sudo /opt/asa-cluster/deploy/safe-shutdown.sh down
+
+# Starting servers that are already stopped does not require a save:
 cd /opt/asa-cluster/deploy && docker compose -p asa-cluster up -d
 
 # Game/server config files (per map), editable on the host:
@@ -124,7 +128,7 @@ All tooling reads `/opt/asa-cluster/config.ini`. Commands accept an optional
 - **Crash analyzer** (run on demand):
   ```bash
   /opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py            # all maps
-  /opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py --server island --last
+  /opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py --server aberration --last
   ```
 
 ## Keeping config.ini and .env in sync
@@ -149,12 +153,15 @@ breeding, official wild level 150**, plus QoL and the mod settings:
 - Rates: XP 3x, Harvest 3x, Taming 5x, faster resource respawn, 5x item stacks.
 - Breeding: ~15x maturation, 10x hatch, lower cuddle interval, slower baby food drain.
 - PvE: structure/dino decay off, flyer carry, cave building, cluster transfers enabled.
+- Aberration only: all dinos can transfer in and back out, including flyers,
+  but flyer riding, flyer carry, and forced cave flying remain disabled so the
+  map's intended no-flying progression cannot be bypassed.
 - Mods: Configurable Cryopods tuned (no cryo sickness, cryogun enabled,
   boss-arena deployment disabled, creature inventories drop in bags) and
   Cybers Structures `EnableEngramOverride=True` (vanilla building engrams are
   replaced by the CS versions so you don't get duplicates).
-- Server-list names: each map advertises as `Battling Poverty [Island]`,
-  `Battling Poverty [Scorched]`, `Battling Poverty [Genesis 1]`, and
+- Server-list names: each map advertises as `Battling Poverty [Aberration]`,
+  `Battling Poverty [Ragnarok]`, `Battling Poverty [Genesis 1]`, and
   `Battling Poverty [Lost Colony]`
   (the prefix is `CLUSTER_NAME` in the script).
 Run it (idempotent - edit the values in the script and re-run anytime):
@@ -169,7 +176,7 @@ the cluster, wipe wild dinos once (`/server destroy-wild-dinos` per map, or RCON
 For a join password, set `ServerPassword` in each map's `GameUserSettings.ini`
 (never on the command line - a space there corrupts the admin password).
 ## Troubleshooting
-- **Server won't appear / start**: `docker logs asa-island`; confirm
+- **Server won't appear / start**: `docker logs asa-aberration`; confirm
   `vm.max_map_count` (`sysctl vm.max_map_count`) and that game UDP ports are
   open at the VPS firewall *and* provider security group.
 - **Bot/watchdog can't reach RCON**: confirm the container is past first boot,

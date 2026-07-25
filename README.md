@@ -140,7 +140,8 @@ Monitors `ArkAscendedServer.exe` and keeps it running:
 - **Crash recovery** - detects process death, auto-restarts within seconds
 - **Circuit breaker** - stops restarting after 3 crashes in 10 minutes (configurable)
 - **Memory monitor** - graceful restart with player warnings before OOM crashes
-- **RCON warnings** - countdown broadcasts in-game before any restart
+- **Save-before-stop** - every managed restart issues `SaveWorld`; use
+  `deploy/safe-shutdown.sh` for manual stops, restarts, and recreates
 
 ```
 python watchdog/watchdog.py             # Normal operation

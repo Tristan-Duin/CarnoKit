@@ -29,18 +29,21 @@ if grep -Eq '^[[:space:]]*token[[:space:]]*=[[:space:]]*$' "${REPO_DIR}/config.i
 fi
 
 echo "==> Installing systemd units (paths -> ${REPO_DIR})"
-for unit in asa-bot asa-watchdog; do
+for unit in asa-bot asa-watchdog asa-save-on-shutdown; do
   sed "s#/opt/asa-cluster#${REPO_DIR}#g" "${SCRIPT_DIR}/systemd/${unit}.service" \
     > "/etc/systemd/system/${unit}.service"
 done
 
 systemctl daemon-reload
-systemctl enable asa-bot.service asa-watchdog.service
+systemctl enable asa-bot.service asa-watchdog.service asa-save-on-shutdown.service
+systemctl start asa-save-on-shutdown.service
 systemctl restart asa-bot.service asa-watchdog.service
 
 cat <<EOF
 
 Tooling installed and started.
+
+The host-shutdown guard is active and will SaveWorld before Docker stops.
 
   systemctl status asa-bot --no-pager
   systemctl status asa-watchdog --no-pager

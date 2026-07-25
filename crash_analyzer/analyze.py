@@ -7,7 +7,7 @@ crashed, why, and what to do about it.
 
 Usage:
     py analyze.py                         # Analyze every server in config.ini
-    py analyze.py --server island         # Analyze just one map
+    py analyze.py --server aberration     # Analyze just one map
     py analyze.py --last                   # Only the most recent crash (per server)
     py analyze.py --json                   # Output as JSON
     py analyze.py --server-dir /path/sf    # Analyze one explicit server-files dir
@@ -315,7 +315,7 @@ def main():
     ap.add_argument("--config", type=Path, default=_DEFAULT_CONFIG,
                      help="Path to shared config.ini (default: ../config.ini)")
     ap.add_argument("--server", default=None,
-                     help="Server key to analyze (e.g. island). Default: all servers")
+                     help="Server key to analyze (e.g. aberration). Default: all servers")
     ap.add_argument("--server-dir", type=Path, default=None,
                      help="Analyze one explicit server-files directory (overrides --server)")
     ap.add_argument("--last", action="store_true",

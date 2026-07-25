@@ -240,6 +240,20 @@ def countdown_then_save(cfg: Config, server: ServerCfg, total_minutes: int, reas
             pass
 
 
+def final_save(cfg: Config, server: ServerCfg) -> None:
+    """Best-effort final save immediately before every watchdog restart."""
+    if not cfg.rcon_enabled:
+        log.warning("[%s] Cannot final-save: RCON is disabled.", server.name)
+        return
+    try:
+        rcon_client.save_world(cfg.rcon_host, server.rcon_port, cfg.rcon_password)
+        log.info("[%s] Final SaveWorld issued; allowing disk writes to flush.", server.name)
+        time.sleep(5)
+    except Exception as exc:
+        # An unresponsive server may not accept RCON, but never skip the attempt.
+        log.warning("[%s] Final SaveWorld failed before restart: %s", server.name, exc)
+
+
 # ── Main watchdog loop ───────────────────────────────────────────────────────────
 
 def run(cfg: Config, *, dry_run: bool = False) -> None:
@@ -294,6 +308,7 @@ def run(cfg: Config, *, dry_run: bool = False) -> None:
                                 countdown_then_save(
                                     cfg, server, cfg.memory_restart_countdown_minutes, "memory restart"
                                 )
+                                final_save(cfg, server)
                                 docker_restart(server.container, dry_run=dry_run)
                             else:
                                 log.info("[DRY RUN] Would memory-restart %s", server.name)
@@ -331,6 +346,8 @@ def run(cfg: Config, *, dry_run: bool = False) -> None:
             # Restart the container.
             log.warning("[%s] Unresponsive - restarting container %s.", server.name, server.container)
             history.record(server.name, "unresponsive")
+            if not dry_run:
+                final_save(cfg, server)
             docker_restart(server.container, dry_run=dry_run)
             st.restart_times.append(datetime.now())
             st.fails = 0

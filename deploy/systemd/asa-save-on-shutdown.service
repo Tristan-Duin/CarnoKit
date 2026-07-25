@@ -1,0 +1,14 @@
+[Unit]
+Description=Save ASA worlds before host or Docker shutdown
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/true
+ExecStop=/bin/bash /opt/asa-cluster/deploy/safe-shutdown.sh stop
+TimeoutStopSec=180
+
+[Install]
+WantedBy=multi-user.target

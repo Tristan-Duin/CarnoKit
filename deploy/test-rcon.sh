@@ -6,7 +6,7 @@
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
-MAPS="island scorched genesis lostcolony"
+MAPS="aberration ragnarok genesis lostcolony"
 ENV_FILE="${BASE_DIR}/deploy/.env"
 
 if [[ "${EUID}" -ne 0 ]]; then

@@ -25,8 +25,8 @@ Thumbs.db
 .DS_Store
 
 # ASA per-map server data (saves, dinos, players) - VPS runtime only, never commit
-island/
-scorched/
+aberration/
+ragnarok/
 ragnarok/
 lostcolony/
 cluster-shared/

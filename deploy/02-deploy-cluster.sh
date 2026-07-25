@@ -24,7 +24,7 @@ set +a
 BASE_DIR="${BASE_DIR:-/opt/asa-cluster}"
 SERVER_UID=25000
 SERVER_GID=25000
-MAPS=(island scorched genesis lostcolony)
+MAPS=(aberration ragnarok genesis lostcolony)
 
 require_env() {
   local name="$1"
@@ -71,8 +71,8 @@ mkdir -p "${BASE_DIR}/cluster-shared"
 if [[ "${EUID}" -eq 0 ]]; then
   echo "==> Fixing data directory ownership for the in-container gameserver user"
   chown -R "${SERVER_UID}:${SERVER_GID}" \
-    "${BASE_DIR}/island" \
-    "${BASE_DIR}/scorched" \
+    "${BASE_DIR}/aberration" \
+    "${BASE_DIR}/ragnarok" \
     "${BASE_DIR}/genesis" \
     "${BASE_DIR}/lostcolony" \
     "${BASE_DIR}/cluster-shared"
@@ -88,8 +88,13 @@ fi
 
 validate_cluster_config
 
-echo "==> Starting the cluster (docker compose -p asa-cluster up -d --remove-orphans)"
-docker compose -p asa-cluster up -d --remove-orphans
+if docker ps -q --filter label=com.docker.compose.project=asa-cluster | grep -q .; then
+  echo "==> Existing cluster detected; saving every world before recreation"
+  bash "${BASE_DIR}/deploy/safe-shutdown.sh" recreate
+else
+  echo "==> Starting the cluster (docker compose -p asa-cluster up -d --remove-orphans)"
+  docker compose -p asa-cluster up -d --remove-orphans
+fi
 
 cat <<EOF
 
@@ -98,13 +103,13 @@ the server (~10-30 GB), Proton initialises, then the mods download. Expect
 10-30+ minutes before the servers advertise.
 
 Follow progress:
-  docker logs -f asa-island
-  docker logs -f asa-scorched
+  docker logs -f asa-aberration
+  docker logs -f asa-ragnarok
   docker logs -f asa-genesis
   docker logs -f asa-lostcolony
 
 Find the session name (once booted):
-  docker exec asa-island cat server-files/ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini | grep SessionName
+  docker exec asa-aberration cat server-files/ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini | grep SessionName
 
 Then set up the tooling:  sudo bash 03-setup-tooling.sh
 EOF
