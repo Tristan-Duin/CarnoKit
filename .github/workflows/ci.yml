@@ -1,0 +1,51 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r bot/requirements.txt
+
+      - name: Compile Python sources
+        run: python -m compileall -q bot watchdog crash_analyzer
+
+      - name: Check shell scripts
+        run: shellcheck deploy/*.sh
+
+      - name: Validate Compose configuration
+        env:
+          BASE_DIR: /opt/asa-cluster
+          CLUSTER_ID: ci-validation
+          MODS: 940975,929169,928548
+          ADMIN_PASSWORD: ci-placeholder
+          JOIN_PASSWORD: ""
+          MAX_PLAYERS: "70"
+          ABERRATION_GAME_PORT: "7777"
+          ABERRATION_RCON_PORT: "27020"
+          RAGNAROK_GAME_PORT: "7778"
+          RAGNAROK_RCON_PORT: "27021"
+          GENESIS_GAME_PORT: "7779"
+          GENESIS_RCON_PORT: "27022"
+          LOSTCOLONY_GAME_PORT: "7780"
+          LOSTCOLONY_RCON_PORT: "27023"
+        run: docker compose -f deploy/docker-compose.yml config --quiet

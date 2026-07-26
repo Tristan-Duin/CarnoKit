@@ -1,5 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
-# Shell scripts always use LF (they run on the Linux VPS)
+# Shell scripts and workflow definitions always use LF on Linux.
 *.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

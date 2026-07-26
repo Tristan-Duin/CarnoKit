@@ -100,6 +100,11 @@ cd /opt/asa-cluster/deploy && docker compose -p asa-cluster up -d
 #   GameUserSettings.ini and Game.ini  (restart the container after editing)
 ```
 
+Project-code deployments are automated after successful GitHub validation and
+restart only the bot and watchdog. ARK game-build updates remain controlled by
+the bot so players are warned and every world is saved. See
+[`docs/deployment.md`](../docs/deployment.md) for setup and safety details.
+
 ### Changing mods or player limit
 Edit `MODS` / `MAX_PLAYERS` in `deploy/.env` (and mirror `mods` in
 `config.ini`), then recreate the containers:

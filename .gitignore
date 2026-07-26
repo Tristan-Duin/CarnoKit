@@ -13,6 +13,7 @@ config.ini
 *.log
 crash_history.json
 schedules.json
+.deployed-commit
 
 # IDE
 .vscode/
