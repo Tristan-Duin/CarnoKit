@@ -20,7 +20,9 @@ exec 9>"${LOCK_FILE}"
 flock -n 9 || die "another CarnoKit deployment is already running"
 
 cd "${REPO}"
-git diff --quiet && git diff --cached --quiet || die "tracked local changes would be overwritten"
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  die "tracked local changes would be overwritten"
+fi
 
 log "Fetching ${TARGET_SHA} from origin/${BRANCH}"
 git fetch --no-tags origin "${BRANCH}"
