@@ -59,6 +59,7 @@ class ArkBot(commands.Bot):
         intents = discord.Intents.default()
         intents.reactions = True
         super().__init__(command_prefix="!", intents=intents, tree_cls=ArkCommandTree)
+        self._commands_synced = False
 
         # One shared RCON client per server (created once, used by all cogs).
         self.rcons: dict[str, RconClient] = {
@@ -96,44 +97,51 @@ class ArkBot(commands.Bot):
                 log.error("Failed to load %s: %s", ext, exc)
 
     async def on_ready(self) -> None:
-        synced = await self.tree.sync()
-        log.info(
-            "Bot online as %s - synced %d global slash commands: %s",
-            self.user,
-            len(synced),
-            ", ".join(cmd.name for cmd in synced) or "(none)",
-        )
+        # Discord may dispatch on_ready again after a reconnect. The first
+        # guild-only sync clears the in-memory global tree, so repeating it
+        # would otherwise copy an empty tree over the guild commands.
+        if self._commands_synced:
+            return
 
-        # Global slash commands can take time to appear in Discord. If the bot
-        # is locked to a configured channel, sync commands directly to that
-        # channel's guild too so new commands are available there immediately.
+        # A channel-locked bot publishes commands only to that channel's guild.
+        # Publishing both global and guild copies makes Discord show two command
+        # sets and can leave the slower global copy advertising old map choices.
         try:
-            guilds_to_sync: list[discord.Guild] = []
             if cfg.channel_id:
                 channel = self.get_channel(cfg.channel_id) or await self.fetch_channel(cfg.channel_id)
                 guild = getattr(channel, "guild", None)
-                if guild:
-                    guilds_to_sync.append(guild)
-            if not guilds_to_sync:
-                guilds_to_sync = list(self.guilds)
+                if not guild:
+                    raise RuntimeError(f"Configured channel {cfg.channel_id} is not in a guild")
 
-            seen_guilds: set[int] = set()
-            for guild in guilds_to_sync:
-                if guild.id in seen_guilds:
-                    continue
-                seen_guilds.add(guild.id)
                 guild_obj = discord.Object(id=guild.id)
                 self.tree.copy_global_to(guild=guild_obj)
+                self._commands_synced = True
+
+                # Remove commands previously published globally before this bot
+                # switched to guild-only sync. Keep the guild copy made above.
+                self.tree.clear_commands(guild=None)
+                await self.tree.sync()
+
                 guild_synced = await self.tree.sync(guild=guild_obj)
                 log.info(
-                    "Synced %d guild slash commands to %s (%s): %s",
+                    "Bot online as %s - synced %d guild slash commands to %s (%s): %s",
+                    self.user,
                     len(guild_synced),
                     guild.name,
                     guild.id,
                     ", ".join(cmd.name for cmd in guild_synced) or "(none)",
                 )
+            else:
+                synced = await self.tree.sync()
+                self._commands_synced = True
+                log.info(
+                    "Bot online as %s - synced %d global slash commands: %s",
+                    self.user,
+                    len(synced),
+                    ", ".join(cmd.name for cmd in synced) or "(none)",
+                )
         except Exception as exc:
-            log.warning("Guild slash command sync failed: %s", exc)
+            log.warning("Slash command sync failed: %s", exc)
 
         # Global error handler for slash commands.
         @self.tree.error
