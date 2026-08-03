@@ -50,7 +50,8 @@ Put this repo at `/opt/asa-cluster` so you have:
    ```
 3. **Configure secrets** (keep these two files in sync):
    - `deploy/.env` (copied from `.env.example`): `ADMIN_PASSWORD`, optional
-     `JOIN_PASSWORD`, `CLUSTER_ID`, `MODS`, ports.
+     `JOIN_PASSWORD`, `MODS`, ports, and a private `CLUSTER_ID` generated with
+     `openssl rand -hex 16`. Never reuse the public example cluster ID.
    - `config.ini`: `[discord] token`, and the matching `[cluster]`
      `admin_password`, `join_password`, `cluster_id`, `mods`.
    ```bash

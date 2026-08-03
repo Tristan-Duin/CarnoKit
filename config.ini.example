@@ -12,14 +12,17 @@
 [cluster]
 base_dir = /opt/asa-cluster
 compose_project = asa-cluster
-cluster_id = arkcluster01
+# Must match deploy/.env CLUSTER_ID. Use a private random value, not this
+# placeholder, so unrelated servers cannot join the transfer cluster.
+cluster_id = CHANGE_TO_A_PRIVATE_RANDOM_ID
 
 # CurseForge project IDs installed on every map. ASA resolves current releases
 # at server startup; these are project IDs, not version-specific file IDs.
 #   940975 = Cybers Structures QoL+ (Crossplay)
 #   929169 = Configurable Cryopods
 #   928548 = Shiny! Dinos Ascended
-mods = 940975,929169,928548
+#   1619480 = Traits Reworked
+mods = 940975,929169,928548,1619480
 
 # RCON + admin password (must match deploy/.env ADMIN_PASSWORD). CHANGE THIS.
 admin_password = CHANGE_ME

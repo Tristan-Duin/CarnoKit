@@ -391,8 +391,8 @@ class UpdateChecker:
             await asyncio.sleep(flush_seconds)  # let saves flush
 
     def _server_chat_command(self, message: str) -> str:
-        """Build the same cluster chat command used by /players broadcast."""
-        return f"ServerChat \"{message.replace(chr(34), chr(39))}\""
+        """Build an on-screen broadcast command for cluster notices."""
+        return f"Broadcast {message.replace(chr(34), chr(39))}"
 
     async def _restart_all(self) -> None:
         """Restart every configured server container as one cluster operation."""

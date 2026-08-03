@@ -35,13 +35,20 @@ require_env() {
 }
 
 validate_cluster_config() {
-  local services
+  local services expected_services unexpected_services
 
   echo "==> Validating 4-map cluster configuration"
 
   require_env CLUSTER_ID
   require_env ADMIN_PASSWORD
   require_env MAX_PLAYERS
+
+  case "${CLUSTER_ID}" in
+    arkcluster01|CHANGE_TO_A_PRIVATE_RANDOM_ID)
+      echo "CLUSTER_ID is a public example value; generate a private ID with: openssl rand -hex 16" >&2
+      exit 1
+      ;;
+  esac
 
   for srv in "${MAPS[@]}"; do
     local upper
@@ -51,12 +58,23 @@ validate_cluster_config() {
   done
 
   services="$(docker compose -p asa-cluster config --services)"
+  expected_services=$'asa-permissions\nasa-aberration\nasa-ragnarok\nasa-genesis\nasa-lostcolony'
   for srv in "${MAPS[@]}"; do
     if ! printf '%s\n' "${services}" | grep -qx "asa-${srv}"; then
       echo "Compose config is missing service asa-${srv}; refusing to start a partial cluster." >&2
       exit 1
     fi
   done
+
+  unexpected_services="$(comm -13 \
+    <(printf '%s\n' "${expected_services}" | sort) \
+    <(printf '%s\n' "${services}" | sort))"
+  if [[ -n "${unexpected_services}" ]]; then
+    echo "Compose config contains services outside the approved 4-map cluster:" >&2
+    printf '  %s\n' ${unexpected_services} >&2
+    echo "Refusing to start an unintended map or service." >&2
+    exit 1
+  fi
 }
 
 echo "==> Ensuring data directories under ${BASE_DIR}"

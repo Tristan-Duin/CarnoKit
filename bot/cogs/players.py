@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Optional
 
 import discord
@@ -119,13 +120,23 @@ class PlayersCog(commands.GroupCog, group_name="players"):
             sent: list[str] = []
             failed: list[str] = []
 
-            for key, sc in cfg.servers.items():
+            async def send(key: str) -> tuple[str, Exception | None]:
                 try:
                     rcon = self.bot.rcon_for(key)  # type: ignore[attr-defined]
                     await rcon.ensure_connected()
-                    await rcon.command(f'ServerChat "{text}"')
-                    sent.append(sc.name)
+                    await rcon.command(f"Broadcast {text}")
+                    return key, None
                 except Exception as exc:
+                    return key, exc
+
+            # Each map has an independent RCON connection. Send concurrently so
+            # a slow or reconnecting server cannot delay the rest of the cluster.
+            results = await asyncio.gather(*(send(key) for key in cfg.servers))
+            for key, exc in results:
+                sc = cfg.servers[key]
+                if exc is None:
+                    sent.append(sc.name)
+                else:
                     failed.append(f"{sc.name}: `{exc}`")
 
             if failed:
@@ -144,7 +155,7 @@ class PlayersCog(commands.GroupCog, group_name="players"):
 
         rcon = self.bot.rcon_for(server)  # type: ignore[attr-defined]
         await rcon.ensure_connected()
-        resp = await rcon.command(f'ServerChat "{text}"')
+        resp = await rcon.command(f"Broadcast {text}")
         await interaction.followup.send(
             embed=embeds.success("Broadcast Sent", resp or text)
         )
