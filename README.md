@@ -1,180 +1,197 @@
 # CarnoKit
 
-Server management toolkit. Three standalone tools, one config file.
+CarnoKit runs and manages a four-map **ARK: Survival Ascended** cluster on
+Linux. The included deployment currently hosts Aberration, Ragnarok, Genesis 1,
+and Lost Colony in Docker.
 
-| Tool | What it does |
-|---|---|
-| **Bot** | Discord bot - RCON commands, player management, auto-updates, scheduled restarts, server logs |
-| **Watchdog** | Keeps the server alive - auto-restarts on crash, memory monitoring, circuit breaker |
-| **Crash Analyzer** | Parses UE5 crash dumps, identifies the cause, tells you how to fix it |
+It provides:
+
+- a Discord bot for cluster status, administration, scheduled jobs, logs, and
+  safe updates;
+- a watchdog that recovers unresponsive servers and can restart before an
+  out-of-memory failure;
+- a crash analyzer for UE5 dumps and server logs; and
+- deployment scripts for provisioning and maintaining the VPS.
+
+All four maps share one transfer directory. Each map keeps its own server files,
+Steam data, ports, and logs.
 
 ## Requirements
 
-- Python 3.10+
-- Dedicated Server with RCON enabled
-- Discord bot token (for the bot only)
+- Ubuntu 22.04 or 24.04 on x86-64
+- Docker Engine with the Compose plugin
+- Python 3.10 or newer
+- 64 GB or more RAM
+- At least 130 GB of free disk space
+- A Discord bot token
+- Root or sudo access during setup
 
-## Get er' Runnin
+## Install
 
-```
-git clone https://github.com/Tristan-Duin/CarnoKit.git
-cd CarnoKit
-pip install .[all]
-copy config.example.ini config.ini
-```
+Clone the repository to `/opt/asa-cluster` on the VPS:
 
-Edit `config.ini` with your server paths, RCON password, and Discord bot token.
-
-Then run whichever tools you want:
-
-```
-python bot/main.py                # Discord bot
-python watchdog/watchdog.py       # Process watchdog
-python crash_analyzer/analyze.py  # Crash report
+```bash
+sudo git clone https://github.com/Tristan-Duin/CarnoKit.git /opt/asa-cluster
+cd /opt/asa-cluster
 ```
 
-## Install Options
+Provision the host, create the configuration files, launch the maps, and install
+the management services:
 
-Install only what you want:
-
+```bash
+sudo bash deploy/01-setup-vps.sh
+cp deploy/.env.example deploy/.env
+cp config.ini.example config.ini
+# Edit deploy/.env and config.ini before continuing.
+sudo bash deploy/02-deploy-cluster.sh
+sudo bash deploy/03-setup-tooling.sh
 ```
-pip install .[bot]          # Discord bot only
-pip install .[watchdog]     # Watchdog only
-pip install .[all]          # Everything
+
+Keep the shared values in `deploy/.env` and `config.ini` identical, especially
+the admin password, cluster ID, mod list, and ports. Never use the example
+cluster ID or password in production.
+
+The first launch downloads a separate server installation for every map and can
+take 10–30 minutes or longer per map.
+
+See [the complete deployment guide](deploy/README.md) for configuration,
+firewall rules, rates, backups, and troubleshooting.
+
+## Routine operations
+
+```bash
+# Show the containers
+docker ps
+
+# Follow one map's startup or server log
+docker logs -f asa-aberration
+
+# Safely restart one map (warn/save first)
+sudo /opt/asa-cluster/deploy/safe-shutdown.sh restart asa-aberration
+
+# Safely stop the cluster
+sudo /opt/asa-cluster/deploy/safe-shutdown.sh down
 ```
 
-The crash analyzer needs no install - it uses Python stdlib only.
+Use `safe-shutdown.sh` for manual stops and restarts so reachable worlds are
+saved first.
 
-## Configuration
+The installed systemd services are:
 
-All settings live in `config.ini` at the project root. Each tool reads only the sections it needs.
+- `asa-bot` — Discord bot, scheduler, logs, and game update orchestration
+- `asa-watchdog` — RCON health and memory monitoring
+- `asa-save-on-shutdown` — saves worlds when the host shuts down
 
-| Section | Used by | Required fields |
-|---|---|---|
-| `[server]` | All three | `dir` |
-| `[rcon]` | Bot, Watchdog | `password` |
-| `[discord]` | Bot | `token` |
-| `[steamcmd]` | Bot | `path` |
-| `[scheduler]` | Bot | (all optional) |
-| `[boss]` | Bot | (all optional) |
-| `[watchdog]` | Watchdog | (all optional) |
+View service logs with, for example:
 
-See `config.example.ini` for all available settings with descriptions.
+```bash
+journalctl -u asa-bot -f
+journalctl -u asa-watchdog -f
+```
 
-## Bot Commands
+## Discord commands
 
-### Server
-| Command | Description | Permission |
-|---|---|---|
-| `/server status` | Server status and online players | Everyone |
-| `/server save` | Force world save | Admin |
-| `/server destroy-wild-dinos` | Wipe wild dinos (confirms first) | Admin |
-| `/server motd [message]` | Get or set Message of the Day | Admin |
-| `/server time <HH:MM>` | Set in-game time | Admin |
-| `/server raw <command>` | Run any RCON command | Owner |
+Most commands accept an optional map. If omitted, single-map commands target
+the first configured map.
 
-### Players
-| Command | Description | Permission |
-|---|---|---|
-| `/players list` | Show online players with IDs | Everyone |
-| `/players kick <player> [reason]` | Kick a player | Admin |
-| `/players ban <player> [reason]` | Ban a player | Admin |
-| `/players unban <id>` | Unban a player | Admin |
-| `/players message <player> <text>` | DM a player in-game | Admin |
-| `/players broadcast <text> [server]` | Broadcast to one server or all servers | Admin |
+| Group | Common commands | Access |
+| --- | --- | --- |
+| Cluster | `/cluster status` | Everyone |
+| Server | `/server status`, `save`, `motd`, `time`, `destroy-wild-dinos` | Mixed |
+| Players | `/players list`, `message`, `broadcast`, `kick`, `ban`, `unban` | Mixed |
+| Admin | `/admin give`, `xp`, `summon`, `teleport`, `set-level` | Admin/Owner |
+| Scheduler | `/schedule auto-save`, `restart`, `broadcast`, `list`, `cancel` | Mixed |
+| Updates | `/update check`, `status`, `now` | Mixed |
+| Logs | `/logs tail`, `search` | Admin |
+| Boss fights | `/boss start`, `list` | Everyone |
 
-### Admin
-| Command | Description | Permission |
-|---|---|---|
-| `/admin give <player> <item> [qty] [quality]` | Give items to a player | Admin |
-| `/admin xp <player> <amount>` | Give XP to a player | Admin |
-| `/admin summon <creature>` | Spawn a creature | Admin |
-| `/admin teleport <player>` | Teleport a player to you | Admin |
-| `/admin set-level <player> <level>` | Set a player's level | Admin |
-| `/admin rename-tribe <name> <new_name>` | Rename a tribe | Admin |
-| `/admin kill <player>` | Kill a player | Owner |
-| `/admin clear-inventory <player>` | Clear a player's inventory | Owner |
-| `/admin destroy-tame` | Destroy targeted tame (in-game) | Owner |
-| `/admin pvp-toggle` | Toggle global PvP | Owner |
+Set `admin_role_ids` and `owner_user_ids` under `[discord]` in `config.ini`.
+The Discord server owner automatically receives Owner access. Raw RCON and the
+most destructive commands are Owner-only.
 
-### Scheduler
-| Command | Description | Permission |
-|---|---|---|
-| `/schedule auto-save <minutes>` | Set auto-save interval (0 = off) | Admin |
-| `/schedule restart <cron>` | Schedule recurring whole-cluster restarts | Admin |
-| `/schedule broadcast <cron> <msg>` | Schedule recurring broadcasts | Admin |
-| `/schedule list` | Show active schedules | Everyone |
-| `/schedule cancel <id>` | Cancel a schedule | Admin |
+## Updates and restarts
 
-The bot and shipped map profile both default to 15-minute auto-saves:
-`auto_save_minutes = 15` and `AutoSavePeriodMinutes=15.0`.
+CarnoKit deliberately separates three kinds of updates:
 
-### Boss
-| Command | Description | Permission |
-|---|---|---|
-| `/boss start <hours> [title] [emoji]` | Start a boss fight countdown and reaction signup roster | Everyone |
-| `/boss list` | Show active boss fight countdowns | Everyone |
+### ARK server updates
 
-Players join by reacting with the configured emoji on the countdown message.
-Removing that reaction removes them from the displayed roster. When the timer
-starts, the bot pings the Surviver role and keeps the countdown embed refreshed.
-When the timer ends, the bot DMs every signed-up player that it is boss fight time.
+The bot checks the public Steam build every `update_check_minutes` (15 minutes
+by default). When it finds a new build, it:
 
-### Updates
-| Command | Description | Permission |
-|---|---|---|
-| `/update check` | Check for game server updates | Admin |
-| `/update status` | Show installed/latest game build state | Everyone |
-| `/update now` | Force a server refresh with countdown | Owner |
+1. announces a countdown in Discord and on every map;
+2. sends `SaveWorld` to every map at the one-minute warning;
+3. sends `SaveWorld` again immediately before shutdown;
+4. waits 20 seconds for the final saves to flush; and
+5. restarts all map containers together.
 
-### Logs
-| Command | Description | Permission |
-|---|---|---|
-| `/logs tail [lines]` | Show last N log lines | Admin |
-| `/logs search <query>` | Search server logs | Admin |
+If any map cannot be saved, the restart is aborted. `/update now` performs this
+same safe, announced cycle even when no new ARK build is available.
+
+### Mod updates
+
+`MODS` contains CurseForge **project IDs**, not pinned file versions. Whenever a
+map container starts, ASA checks each configured project and installs its current
+server release.
+
+CarnoKit does not currently detect mod-only releases or immediately restart the
+cluster for them. A mod update is therefore installed on the next manual,
+scheduled, watchdog, or ARK-update restart.
+
+To change the mod list, update `MODS` in `deploy/.env` and `mods` in
+`config.ini`, then safely recreate the containers as described in the
+[deployment guide](deploy/README.md#changing-mods-or-player-limit).
+
+### CarnoKit code updates
+
+After validation succeeds on `main`, GitHub Actions deploys that exact commit
+and restarts only the bot and watchdog. It never restarts the ARK containers or
+touches saves and other ignored runtime data. See
+[automated deployment](docs/deployment.md) for setup and rollback behavior.
 
 ## Watchdog
 
-Monitors `ArkAscendedServer.exe` and keeps it running:
+The watchdog probes every map over RCON. After repeated failures it restarts the
+affected container, with a per-map circuit breaker to avoid endless restart
+loops. It also supports memory thresholds and gives servers a configurable boot
+grace period so slow updates are not interrupted.
 
-- **Crash recovery** - detects process death, auto-restarts within seconds
-- **Circuit breaker** - stops restarting after 3 crashes in 10 minutes (configurable)
-- **Memory monitor** - graceful restart with player warnings before OOM crashes
-- **Save-before-stop** - every managed restart issues `SaveWorld`; use
-  `deploy/safe-shutdown.sh` for manual stops, restarts, and recreates
+Managed restarts save the world whenever the server is still reachable.
 
-```
-python watchdog/watchdog.py             # Normal operation
-python watchdog/watchdog.py --dry-run   # Monitor only, no restarts
-```
+## Crash analyzer
 
-## Crash Analyzer
+Run the analyzer on the VPS:
 
-Scans `ShooterGame/Saved/Crashes/` and server logs. Classifies each crash:
+```bash
+# Analyze all configured maps
+/opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py
 
-| Category | Meaning |
-|---|---|
-| **RCON** | An RCON command crashed the server |
-| **Mod** | A mod DLL appears in the crash stack |
-| **Engine** | Game bug (null pointer, access violation) |
-| **OOM** | Server ran out of memory |
-
-Each crash report includes the cause, the fix, the call stack, and the server log lines leading up to the crash.
-
-```
-python crash_analyzer/analyze.py           # Full report
-python crash_analyzer/analyze.py --last    # Most recent crash only
-python crash_analyzer/analyze.py --brief   # Summary without stacks
-python crash_analyzer/analyze.py --json    # Machine-readable output
+# Analyze only the latest Aberration crash
+/opt/asa-cluster/venv/bin/python /opt/asa-cluster/crash_analyzer/analyze.py \
+  --server aberration --last
 ```
 
-## Permissions
+Reports classify likely RCON, mod, engine, and out-of-memory failures and include
+the relevant stack and log context.
 
-Set Discord role/user IDs in `config.ini` under `[discord]`:
+## Configuration and data
 
-| Tier | Access | Config key |
-|---|---|---|
-| **Owner** | All commands including raw RCON | `owner_user_ids` |
-| **Admin** | Server management, kicks, bans, cheats, broadcasts, messaging, logs | `admin_role_ids` |
+- `config.ini` configures the bot, watchdog, analyzer, Discord permissions, and
+  map definitions. Start from `config.ini.example`.
+- `deploy/.env` configures Docker Compose. Start from `deploy/.env.example`.
+- `/opt/asa-cluster/<map>/server-files/ShooterGame/Saved/` contains each map's
+  saves and server configuration.
+- `/opt/asa-cluster/cluster-shared/` contains cross-map transfer data.
 
-The Discord server owner automatically gets Owner tier.
+Back up every map's `Saved/` directory and `cluster-shared/` regularly. Neither
+directory is tracked by Git.
+
+## More documentation
+
+- [VPS deployment and server configuration](deploy/README.md)
+- [Automated code deployment](docs/deployment.md)
+- [Example application configuration](config.ini.example)
+- [Example container configuration](deploy/.env.example)
+
+## License
+
+[MIT](LICENSE)

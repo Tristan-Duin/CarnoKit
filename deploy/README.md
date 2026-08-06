@@ -11,7 +11,8 @@ maintained `mschnitzer/asa-linux-server` image via Proton.
 ## What you get
 - 4 clustered maps sharing characters/dinos (one `cluster-shared` volume).
 - Mods on every map: Cybers Structures QoL+ (`940975`), Configurable
-  Cryopods (`929169`), Shiny! Dinos Ascended (`928548`)
+  Cryopods (`929169`), Shiny! Dinos Ascended (`928548`), and Traits Reworked
+  (`1619480`).
 - A Discord bot to manage every map (`/cluster status`, `/server`, `/players`,
   `/admin`, `/logs`, `/schedule`, `/update`).
 - A watchdog that restarts an unresponsive container automatically.
