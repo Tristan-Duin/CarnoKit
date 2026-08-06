@@ -71,7 +71,7 @@ validate_cluster_config() {
     <(printf '%s\n' "${services}" | sort))"
   if [[ -n "${unexpected_services}" ]]; then
     echo "Compose config contains services outside the approved 4-map cluster:" >&2
-    printf '  %s\n' ${unexpected_services} >&2
+    printf '  %s\n' "${unexpected_services}" >&2
     echo "Refusing to start an unintended map or service." >&2
     exit 1
   fi
